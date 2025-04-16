@@ -38,14 +38,14 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   env: {
-    API_ENDPOINT: process.env.API_ENDPOINT || 'https://api.example.com/v1/chat/completions',
-    API_MODEL: process.env.API_MODEL || 'gemini-2.0-pro-exp-search',
-    API_KEY: process.env.API_KEY || 'test_api_key_server',
-    NEXT_PUBLIC_API_ENDPOINT: process.env.NEXT_PUBLIC_API_ENDPOINT || 'https://api.example.com/v1/chat/completions',
-    NEXT_PUBLIC_API_MODEL: process.env.NEXT_PUBLIC_API_MODEL || 'gemini-2.0-pro-exp-search',
-    NEXT_PUBLIC_API_KEY: process.env.NEXT_PUBLIC_API_KEY || 'test_api_key_client',
-    NEXT_PUBLIC_ALLOW_USER_CONFIG: process.env.NEXT_PUBLIC_ALLOW_USER_CONFIG || 'true',
-    NEXT_PUBLIC_ACCESS_PASSWORD: process.env.NEXT_PUBLIC_ACCESS_PASSWORD || 'test_password',
+    API_ENDPOINT: process.env.API_ENDPOINT,
+    API_MODEL: process.env.API_MODEL,
+    API_KEY: process.env.API_KEY,
+    NEXT_PUBLIC_API_ENDPOINT: process.env.NEXT_PUBLIC_API_ENDPOINT,
+    NEXT_PUBLIC_API_MODEL: process.env.NEXT_PUBLIC_API_MODEL,
+    NEXT_PUBLIC_API_KEY: process.env.NEXT_PUBLIC_API_KEY,
+    NEXT_PUBLIC_ALLOW_USER_CONFIG: process.env.NEXT_PUBLIC_ALLOW_USER_CONFIG,
+    NEXT_PUBLIC_ACCESS_PASSWORD: process.env.NEXT_PUBLIC_ACCESS_PASSWORD,
   },
 };
 
