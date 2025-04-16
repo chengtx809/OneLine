@@ -1,9 +1,13 @@
 [build]
   command = "bun run build"
-  publish = "out"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
 
 [images]
   remote_images = ["https://same-assets.com/*"]
+
+# 添加 Next.js 的服务端运行设置
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

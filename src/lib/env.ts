@@ -3,6 +3,11 @@ import type { EnvConfig } from '@/types';
 // 获取环境变量配置
 export function getEnvConfig(): EnvConfig {
   return {
+    // 优先使用服务器端环境变量，其次使用客户端环境变量
+    API_ENDPOINT: process.env.API_ENDPOINT,
+    API_MODEL: process.env.API_MODEL,
+    API_KEY: process.env.API_KEY,
+    // 以下为客户端公开变量
     NEXT_PUBLIC_API_ENDPOINT: process.env.NEXT_PUBLIC_API_ENDPOINT,
     NEXT_PUBLIC_API_MODEL: process.env.NEXT_PUBLIC_API_MODEL,
     NEXT_PUBLIC_API_KEY: process.env.NEXT_PUBLIC_API_KEY,
@@ -20,17 +25,20 @@ export function isUserConfigAllowed(): boolean {
 
 // 获取环境变量中的API端点
 export function getEnvApiEndpoint(): string | undefined {
-  return process.env.NEXT_PUBLIC_API_ENDPOINT;
+  // 优先使用服务器端环境变量
+  return process.env.API_ENDPOINT || process.env.NEXT_PUBLIC_API_ENDPOINT;
 }
 
 // 获取环境变量中的API模型
 export function getEnvApiModel(): string | undefined {
-  return process.env.NEXT_PUBLIC_API_MODEL;
+  // 优先使用服务器端环境变量
+  return process.env.API_MODEL || process.env.NEXT_PUBLIC_API_MODEL;
 }
 
 // 获取环境变量中的API密钥
 export function getEnvApiKey(): string | undefined {
-  return process.env.NEXT_PUBLIC_API_KEY;
+  // 优先使用服务器端环境变量
+  return process.env.API_KEY || process.env.NEXT_PUBLIC_API_KEY;
 }
 
 // 获取环境变量中的访问密码

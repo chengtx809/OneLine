@@ -38,6 +38,11 @@ export interface DateFilterConfig {
 
 // 环境变量配置接口
 export interface EnvConfig {
+  // 服务器端环境变量
+  API_ENDPOINT?: string;
+  API_MODEL?: string;
+  API_KEY?: string;
+  // 客户端环境变量
   NEXT_PUBLIC_API_ENDPOINT?: string;
   NEXT_PUBLIC_API_MODEL?: string;
   NEXT_PUBLIC_API_KEY?: string;
