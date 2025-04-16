@@ -134,7 +134,7 @@ function parseTimelineText(text: string): TimelineData {
 }
 
 // 获取API地址，优先使用相对路径调用中间层
-function getApiUrl(apiConfig: ApiConfig, endpoint: string = 'chat'): string {
+function getApiUrl(apiConfig: ApiConfig, endpoint = 'chat'): string {
   // 根据不同的端点返回不同的 API 路径
   return `/api/${endpoint}`;
 }

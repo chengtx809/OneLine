@@ -3,7 +3,7 @@ import type { EnvConfig } from '@/types';
 // 获取环境变量配置
 export function getEnvConfig(): EnvConfig {
   return {
-    // 优先使用服务器端环境变量，其次使用客户端环境变量
+    // 服务器端环境变量
     API_ENDPOINT: process.env.API_ENDPOINT,
     API_MODEL: process.env.API_MODEL,
     API_KEY: process.env.API_KEY,

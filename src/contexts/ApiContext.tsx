@@ -60,7 +60,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
       // 设置是否启用密码保护
       setIsPasswordProtected(!!envAccessPassword);
-      
+
       // 如果没有设置访问密码，则认为已通过验证
       if (!envAccessPassword) {
         setIsPasswordValidated(true);
@@ -87,7 +87,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         if (storedConfig) {
           try {
             const parsedConfig = JSON.parse(storedConfig);
-            
+
             // 合并配置，环境变量优先级高于localStorage
             initialConfig = {
               endpoint: envEndpoint || parsedConfig.endpoint || '',
@@ -116,12 +116,12 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
     setApiConfig(prev => {
       const newConfig = { ...prev, ...config };
-      
+
       // 只在客户端保存到localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('oneLine_apiConfig', JSON.stringify(newConfig));
       }
-      
+
       // 更新isConfigured状态
       setIsConfigured(!!newConfig.endpoint && !!newConfig.apiKey);
       return newConfig;
@@ -131,7 +131,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   // 验证访问密码
   const validatePassword = (password: string): boolean => {
     if (!isPasswordProtected) return true;
-    
+
     const isValid = password === apiConfig.accessPassword;
     if (isValid) {
       setIsPasswordValidated(true);
@@ -157,10 +157,10 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ApiContext.Provider value={{ 
-      apiConfig, 
-      updateApiConfig, 
-      isConfigured, 
+    <ApiContext.Provider value={{
+      apiConfig,
+      updateApiConfig,
+      isConfigured,
       allowUserConfig,
       isPasswordProtected,
       validatePassword,
