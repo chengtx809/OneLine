@@ -58,7 +58,8 @@ export async function POST(request: Request) {
     console.log('Sending event details request to API:', {
       endpoint: finalEndpoint,
       model: model,
-      usingEnvConfig: isUsingEnvConfig
+      usingEnvConfig: isUsingEnvConfig,
+      apiKeyConfigured: finalApiKey ? '已配置' : '未配置'
     });
 
     // 发送请求到实际的 API 端点，增加超时设置

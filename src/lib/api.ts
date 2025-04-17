@@ -171,7 +171,8 @@ export async function fetchTimelineData(
 
     console.log('发送请求到服务器:', {
       使用环境变量: isUsingEnvConfig,
-      端点: apiUrl
+      端点: apiUrl,
+      模型: model
     });
 
     const response = await axios.post(apiUrl, payload, { headers });
@@ -248,7 +249,8 @@ export async function fetchEventDetails(
 
     console.log('发送事件详情请求到服务器:', {
       使用环境变量: isUsingEnvConfig,
-      端点: apiUrl
+      端点: apiUrl,
+      模型: model
     });
 
     const response = await axios.post(apiUrl, payload, { headers });

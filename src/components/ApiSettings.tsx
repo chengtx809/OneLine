@@ -278,10 +278,11 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
                         id="api-key"
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="API密钥"
+                        placeholder="请输入API密钥"
                         type="password"
                         className="sm:col-span-3 rounded-lg"
                         disabled={!allowUserConfig || (isEnvConfigActive && hasEnvConfig)}
+                        autoComplete="off"
                       />
                     </div>
                   </div>

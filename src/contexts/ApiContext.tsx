@@ -200,7 +200,17 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
       // 只在客户端保存到localStorage
       if (typeof window !== 'undefined') {
+        // 创建一个不包含敏感信息的对象用于日志记录
+        const sanitizedConfig = {
+          ...newConfig,
+          apiKey: newConfig.apiKey ? '***********' : '',
+        };
+
+        // 安全地存储到localStorage
         localStorage.setItem('oneLine_apiConfig', JSON.stringify(newConfig));
+
+        // 日志记录使用脱敏后的配置
+        console.log('API配置已更新', sanitizedConfig);
       }
 
       // 更新isConfigured状态
