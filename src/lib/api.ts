@@ -144,12 +144,14 @@ export async function fetchTimelineData(
   apiConfig: ApiConfig
 ): Promise<TimelineData> {
   try {
-    const { model } = apiConfig;
+    const { model, endpoint, apiKey } = apiConfig;
     // 使用中间层API端点
     const apiUrl = getApiUrl(apiConfig, 'chat');
 
     const payload = {
       model: model,
+      endpoint: endpoint, // 传递endpoint给后端
+      apiKey: apiKey, // 传递apiKey给后端
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `请为以下事件创建时间轴：${query}` }
@@ -157,10 +159,20 @@ export async function fetchTimelineData(
       temperature: 0.7
     };
 
-    // 不再需要将API密钥放在前端请求中
     const headers = {
       'Content-Type': 'application/json'
     };
+
+    // 检查是否是使用环境变量配置
+    const isUsingEnvConfig =
+      model === "使用环境变量配置" ||
+      endpoint === "使用环境变量配置" ||
+      apiKey === "使用环境变量配置";
+
+    console.log('发送请求到服务器:', {
+      使用环境变量: isUsingEnvConfig,
+      端点: apiUrl
+    });
 
     const response = await axios.post(apiUrl, payload, { headers });
 
@@ -181,12 +193,14 @@ export async function fetchEventDetails(
   apiConfig: ApiConfig
 ): Promise<string> {
   try {
-    const { model } = apiConfig;
+    const { model, endpoint, apiKey } = apiConfig;
     // 使用新的 event-details 端点
     const apiUrl = getApiUrl(apiConfig, 'event-details');
 
     const payload = {
       model: model,
+      endpoint: endpoint, // 传递endpoint给后端
+      apiKey: apiKey, // 传递apiKey给后端
       messages: [
         {
           role: "system",
@@ -222,10 +236,20 @@ export async function fetchEventDetails(
       temperature: 0.7
     };
 
-    // 不再需要将API密钥放在前端请求中
     const headers = {
       'Content-Type': 'application/json'
     };
+
+    // 检查是否是使用环境变量配置
+    const isUsingEnvConfig =
+      model === "使用环境变量配置" ||
+      endpoint === "使用环境变量配置" ||
+      apiKey === "使用环境变量配置";
+
+    console.log('发送事件详情请求到服务器:', {
+      使用环境变量: isUsingEnvConfig,
+      端点: apiUrl
+    });
 
     const response = await axios.post(apiUrl, payload, { headers });
 

@@ -11,25 +11,37 @@ export async function POST(request: Request) {
     const apiEndpoint = process.env.API_ENDPOINT;
     const apiModel = process.env.API_MODEL || 'gemini-2.0-flash-exp-search';
 
-    console.log('API Config:', {
-      endpoint: apiEndpoint,
-      model: apiModel,
-      hasKey: !!apiKey
-    });
+    // 解析请求体
+    const requestData = await request.json();
 
-    // 如果没有配置 API 密钥或端点，返回错误
-    if (!apiKey || !apiEndpoint) {
+    // 检查请求中是否使用环境变量配置的标记
+    const isUsingEnvConfig =
+      requestData.model === "使用环境变量配置" ||
+      requestData.endpoint === "使用环境变量配置" ||
+      requestData.apiKey === "使用环境变量配置";
+
+    // 如果请求表明要使用环境变量配置，但环境变量没有配置
+    if (isUsingEnvConfig && (!apiKey || !apiEndpoint)) {
       return NextResponse.json(
-        { error: 'API key or endpoint not configured' },
+        { error: '服务器端API配置缺失，请手动配置API参数' },
         { status: 500 }
       );
     }
 
-    // 解析请求体
-    const requestData = await request.json();
+    // 如果没有配置 API 密钥或端点，返回错误
+    if (!isUsingEnvConfig && (!requestData.apiKey || !requestData.endpoint)) {
+      return NextResponse.json(
+        { error: 'API key or endpoint not configured in request' },
+        { status: 400 }
+      );
+    }
 
-    // 如果请求中包含 model 参数，则使用请求中的 model
-    const model = requestData.model || apiModel;
+    // 如果请求中包含 model 参数，则使用请求中的 model，否则使用环境变量中的 model
+    const model = isUsingEnvConfig ? apiModel : (requestData.model || apiModel);
+
+    // 使用正确的API端点和密钥
+    const finalEndpoint = isUsingEnvConfig ? apiEndpoint : requestData.endpoint;
+    const finalApiKey = isUsingEnvConfig ? apiKey : requestData.apiKey;
 
     // 构建实际发送给 API 的请求体
     const payload = {
@@ -40,13 +52,17 @@ export async function POST(request: Request) {
     // 构建请求头
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'Authorization': `Bearer ${finalApiKey}`
     };
 
-    console.log('Sending request to API:', apiEndpoint);
+    console.log('Sending request to API:', {
+      endpoint: finalEndpoint,
+      model: model,
+      usingEnvConfig: isUsingEnvConfig
+    });
 
     // 发送请求到实际的 API 端点，增加超时设置
-    const response = await axios.post(apiEndpoint, payload, {
+    const response = await axios.post(finalEndpoint, payload, {
       headers,
       timeout: TIMEOUT_MS
     });

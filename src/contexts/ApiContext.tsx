@@ -14,6 +14,9 @@ interface ApiContextType {
   validatePassword: (password: string) => boolean;
   isPasswordValidated: boolean;
   setPasswordValidated: (validated: boolean) => void;
+  hasEnvConfig: boolean; // 新增：是否存在环境变量配置
+  useEnvConfig: boolean; // 新增：是否使用环境变量配置
+  setUseEnvConfig: (use: boolean) => void; // 新增：设置是否使用环境变量配置
 }
 
 const defaultApiConfig: ApiConfig = {
@@ -34,6 +37,9 @@ const ApiContext = createContext<ApiContextType>({
   validatePassword: () => false,
   isPasswordValidated: false,
   setPasswordValidated: () => {},
+  hasEnvConfig: false,
+  useEnvConfig: false,
+  setUseEnvConfig: () => {},
 });
 
 export const useApi = () => useContext(ApiContext);
@@ -44,6 +50,9 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   const [allowUserConfig, setAllowUserConfig] = useState<boolean>(true);
   const [isPasswordProtected, setIsPasswordProtected] = useState<boolean>(false);
   const [isPasswordValidated, setIsPasswordValidated] = useState<boolean>(false);
+  const [hasEnvConfig, setHasEnvConfig] = useState<boolean>(false); // 新增：是否存在环境变量配置
+  const [useEnvConfig, setUseEnvConfig] = useState<boolean>(false); // 新增：是否使用环境变量配置
+  const [userConfig, setUserConfig] = useState<ApiConfig | null>(null); // 新增：用户自定义配置
 
   // 初始化API配置，优先使用环境变量，然后是localStorage
   useEffect(() => {
@@ -57,6 +66,10 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       const envModel = getEnvApiModel();
       const envApiKey = getEnvApiKey();
       const envAccessPassword = getEnvAccessPassword();
+
+      // 检查环境变量中是否存在API配置
+      const hasServerConfig = !!envEndpoint && !!envApiKey;
+      setHasEnvConfig(hasServerConfig);
 
       // 设置是否启用密码保护
       setIsPasswordProtected(!!envAccessPassword);
@@ -73,26 +86,23 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       // 初始化配置对象
       let initialConfig: ApiConfig = { ...defaultApiConfig };
 
-      // 如果环境变量中有配置，优先使用环境变量
-      if (envEndpoint) initialConfig.endpoint = envEndpoint;
-      if (envModel) initialConfig.model = envModel;
-      if (envApiKey) initialConfig.apiKey = envApiKey;
-      initialConfig.allowUserConfig = userConfigAllowed;
-      if (envAccessPassword) initialConfig.accessPassword = envAccessPassword;
+      // 客户端存储的配置
+      let storedUserConfig: ApiConfig | null = null;
+
+      // 是否使用环境变量配置
+      let shouldUseEnvConfig = hasServerConfig;
 
       // 如果允许用户配置，尝试从localStorage加载
       if (userConfigAllowed && typeof window !== 'undefined') {
-        // 只在客户端访问localStorage
+        // 加载用户保存的配置
         const storedConfig = localStorage.getItem('oneLine_apiConfig');
         if (storedConfig) {
           try {
             const parsedConfig = JSON.parse(storedConfig);
-
-            // 合并配置，环境变量优先级高于localStorage
-            initialConfig = {
-              endpoint: envEndpoint || parsedConfig.endpoint || '',
-              model: envModel || parsedConfig.model || defaultApiConfig.model,
-              apiKey: envApiKey || parsedConfig.apiKey || '',
+            storedUserConfig = {
+              endpoint: parsedConfig.endpoint || '',
+              model: parsedConfig.model || defaultApiConfig.model,
+              apiKey: parsedConfig.apiKey || '',
               allowUserConfig: userConfigAllowed,
               accessPassword: envAccessPassword || '',
             };
@@ -100,22 +110,93 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
             console.error('Failed to parse stored config:', e);
           }
         }
+
+        // 加载用户的选择（是否使用环境变量配置）
+        const storedUseEnvConfig = localStorage.getItem('oneLine_useEnvConfig');
+        if (storedUseEnvConfig !== null) {
+          shouldUseEnvConfig = storedUseEnvConfig === 'true';
+        }
+      }
+
+      setUseEnvConfig(shouldUseEnvConfig);
+
+      // 保存用户配置，以备切换
+      if (storedUserConfig) {
+        setUserConfig(storedUserConfig);
+      }
+
+      // 根据当前选择设置使用的配置
+      if (shouldUseEnvConfig && hasServerConfig) {
+        // 使用环境变量配置，但不暴露具体值到前端
+        initialConfig = {
+          endpoint: "使用环境变量配置",
+          model: "使用环境变量配置",
+          apiKey: "使用环境变量配置",
+          allowUserConfig: userConfigAllowed,
+          accessPassword: envAccessPassword || '',
+        };
+        setIsConfigured(true); // 环境变量配置被视为已配置
+      } else if (storedUserConfig) {
+        // 使用用户自定义配置
+        initialConfig = storedUserConfig;
+        setIsConfigured(!!storedUserConfig.endpoint && !!storedUserConfig.apiKey);
+      } else {
+        // 没有任何配置
+        initialConfig.allowUserConfig = userConfigAllowed;
+        if (envAccessPassword) initialConfig.accessPassword = envAccessPassword;
+        setIsConfigured(false);
       }
 
       // 更新状态
       setApiConfig(initialConfig);
-      setIsConfigured(!!initialConfig.endpoint && !!initialConfig.apiKey);
     } catch (error) {
       console.error('Failed to initialize API config:', error);
     }
   }, []);
 
+  // 更新是否使用环境变量配置
+  const handleUseEnvConfig = (use: boolean) => {
+    setUseEnvConfig(use);
+
+    // 保存用户选择到localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('oneLine_useEnvConfig', use.toString());
+    }
+
+    if (use && hasEnvConfig) {
+      // 切换到环境变量配置，但不显示具体信息
+      setApiConfig(prev => ({
+        ...prev,
+        endpoint: "使用环境变量配置",
+        model: "使用环境变量配置",
+        apiKey: "使用环境变量配置",
+      }));
+      setIsConfigured(true);
+    } else if (!use && userConfig) {
+      // 切换到用户自定义配置
+      setApiConfig(userConfig);
+      setIsConfigured(!!userConfig.endpoint && !!userConfig.apiKey);
+    }
+  };
+
   const updateApiConfig = (config: Partial<ApiConfig>) => {
     // 如果不允许用户配置，则不更新
     if (!allowUserConfig) return;
 
+    // 如果当前使用环境变量配置，则切换到用户自定义配置
+    if (useEnvConfig) {
+      setUseEnvConfig(false);
+      // 保存选择到localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('oneLine_useEnvConfig', 'false');
+      }
+    }
+
     setApiConfig(prev => {
       const newConfig = { ...prev, ...config };
+
+      // 保存新配置作为用户配置
+      setUserConfig(newConfig);
 
       // 只在客户端保存到localStorage
       if (typeof window !== 'undefined') {
@@ -165,7 +246,10 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       isPasswordProtected,
       validatePassword,
       isPasswordValidated,
-      setPasswordValidated: setPasswordValidatedSafe
+      setPasswordValidated: setPasswordValidatedSafe,
+      hasEnvConfig,
+      useEnvConfig,
+      setUseEnvConfig: handleUseEnvConfig
     }}>
       {children}
     </ApiContext.Provider>
