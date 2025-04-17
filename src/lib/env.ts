@@ -8,9 +8,6 @@ export function getEnvConfig(): EnvConfig {
     API_MODEL: process.env.API_MODEL,
     API_KEY: process.env.API_KEY,
     // 以下为客户端公开变量
-    NEXT_PUBLIC_API_ENDPOINT: process.env.NEXT_PUBLIC_API_ENDPOINT,
-    NEXT_PUBLIC_API_MODEL: process.env.NEXT_PUBLIC_API_MODEL,
-    NEXT_PUBLIC_API_KEY: process.env.NEXT_PUBLIC_API_KEY,
     NEXT_PUBLIC_ALLOW_USER_CONFIG: process.env.NEXT_PUBLIC_ALLOW_USER_CONFIG,
     NEXT_PUBLIC_ACCESS_PASSWORD: process.env.NEXT_PUBLIC_ACCESS_PASSWORD,
   };
@@ -23,22 +20,31 @@ export function isUserConfigAllowed(): boolean {
   return allowUserConfig === undefined || allowUserConfig === "true";
 }
 
-// 获取环境变量中的API端点
+// 获取环境变量中的API端点 - 客户端使用
 export function getEnvApiEndpoint(): string | undefined {
-  // 优先使用服务器端环境变量
-  return process.env.API_ENDPOINT || process.env.NEXT_PUBLIC_API_ENDPOINT;
+  // 客户端不能直接访问服务器端环境变量，返回空字符串让客户端配置
+  if (typeof window !== 'undefined') {
+    return ''; // 客户端返回空，需要用户手动配置
+  }
+  return process.env.API_ENDPOINT;
 }
 
-// 获取环境变量中的API模型
+// 获取环境变量中的API模型 - 客户端使用
 export function getEnvApiModel(): string | undefined {
-  // 优先使用服务器端环境变量
-  return process.env.API_MODEL || process.env.NEXT_PUBLIC_API_MODEL;
+  // 客户端不能直接访问服务器端环境变量，使用默认模型
+  if (typeof window !== 'undefined') {
+    return 'gemini-2.0-flash-exp-search'; // 返回默认模型
+  }
+  return process.env.API_MODEL || 'gemini-2.0-flash-exp-search';
 }
 
-// 获取环境变量中的API密钥
+// 获取环境变量中的API密钥 - 客户端使用
 export function getEnvApiKey(): string | undefined {
-  // 优先使用服务器端环境变量
-  return process.env.API_KEY || process.env.NEXT_PUBLIC_API_KEY;
+  // 客户端不能直接访问服务器端环境变量，返回空字符串让客户端配置
+  if (typeof window !== 'undefined') {
+    return ''; // 客户端返回空，需要用户手动配置
+  }
+  return process.env.API_KEY;
 }
 
 // 获取环境变量中的访问密码
