@@ -1,7 +1,9 @@
 ## 一线 (OneLine)
 
-一线是一个热点事件时间轴分析工具，它可以帮助用户快速了解重大事件的发展脉络并提供AI辅助分析。[Demo站点](https://oneline.chengtx.me)
-![image](https://github.com/user-attachments/assets/a16f198f-ee6d-4c6b-b212-00f212641cf0)
+一线是一个热点事件时间轴分析工具，它可以帮助用户快速了解重大事件的发展脉络并提供AI辅助分析。
+### [Demo站点](https://oneline.chengtx.me)
+![image](https://github.com/user-attachments/assets/6d20acf8-c4a7-4a52-9849-1d526ec50ba7)
+![image](https://github.com/user-attachments/assets/1b8adf2c-2223-4ba5-94bd-0c223889fd1b)
 
 ## 主要功能
 
@@ -43,7 +45,7 @@ docker pull justincnn/oneline
 2. 在`.env.local`文件中填入你的配置：
 
 ```
-# 服务器端环境变量（更安全，推荐使用）
+# 服务器端环境变量
 # API端点配置
 API_ENDPOINT=https://api.example.com/v1/chat/completions
 
@@ -52,16 +54,6 @@ API_MODEL=gemini-2.0-pro-exp-search
 
 # API密钥配置
 API_KEY=your_api_key_here
-
-# 客户端环境变量（会暴露给前端，不推荐存储敏感信息）
-# API端点配置
-NEXT_PUBLIC_API_ENDPOINT=https://api.example.com/v1/chat/completions
-
-# API模型配置
-NEXT_PUBLIC_API_MODEL=gemini-2.0-pro-exp-search
-
-# API密钥配置（出于安全考虑，推荐使用服务器端 API_KEY）
-NEXT_PUBLIC_API_KEY=your_api_key_here
 
 # 是否允许用户在前端配置API设置
 # 设置为"false"将禁止用户在前端修改API设置
@@ -77,20 +69,9 @@ NEXT_PUBLIC_ACCESS_PASSWORD=your_access_password_here
 **注意事项：**
 
 - 环境变量配置的优先级高于前端用户配置
-- 服务器端环境变量（没有 NEXT_PUBLIC 前缀）更安全，不会暴露给前端
 - 当`NEXT_PUBLIC_ALLOW_USER_CONFIG`设置为`false`时，用户将无法在前端修改API设置
 - 当设置了`NEXT_PUBLIC_ACCESS_PASSWORD`时，用户需要输入正确的密码才能访问API设置
 - 当未设置环境变量时，将使用前端用户配置的设置
-
-## API 中间层
-
-从版本 0.2.0 开始，OneLine 引入了 API 中间层机制，解决以下问题：
-
-1. **CORS 错误**：避免前端直接调用外部 API 时可能遇到的跨域问题
-2. **API 密钥安全**：API 密钥不再在前端暴露，而是安全地存储在服务器端
-3. **网络错误处理**：提供更好的错误处理和重试机制
-
-使用此版本，你需要将项目部署为服务器端渲染应用（SSR），而不是静态站点，以便使用 API Routes 功能。
 
 ### Vercel 部署注意事项
 
