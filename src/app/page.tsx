@@ -541,17 +541,6 @@ function MainContent() {
         onOpenChange={setShowSettings}
       />
 
-      {/* 添加环境变量测试页面链接 */}
-      <div className="fixed bottom-4 right-4">
-        <a
-          href="/test-env"
-          className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-          title="测试环境变量配置"
-        >
-          测试环境变量
-        </a>
-      </div>
-
       {/* Floating API settings button */}
       {showFloatingButton && (
         <Button
