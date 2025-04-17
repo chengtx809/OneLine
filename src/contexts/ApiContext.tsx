@@ -2,8 +2,8 @@
 
 import type React from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
-import type { ApiConfig } from '@/types';
-import { getEnvApiEndpoint, getEnvApiKey, getEnvApiModel, isUserConfigAllowed, getEnvAccessPassword, getEnvConfigStatus } from '@/lib/env';
+import type { ApiConfig, SearxngConfig } from '@/types';
+import { getEnvApiEndpoint, getEnvApiKey, getEnvApiModel, isUserConfigAllowed, getEnvAccessPassword, getEnvConfigStatus, getEnvSearxngUrl, getEnvSearxngEnabled } from '@/lib/env';
 
 interface ApiContextType {
   apiConfig: ApiConfig;
@@ -25,6 +25,14 @@ const defaultApiConfig: ApiConfig = {
   apiKey: '',
   allowUserConfig: true,
   accessPassword: '',
+  searxng: {
+    url: 'https://sousuo.emoe.top',
+    enabled: false,
+    categories: 'general',
+    language: 'zh',
+    timeRange: 'year',
+    numResults: 5
+  }
 };
 
 // 创建默认上下文值，避免服务器端渲染问题
@@ -66,6 +74,8 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       const envModel = getEnvApiModel();
       const envApiKey = getEnvApiKey();
       const envAccessPassword = getEnvAccessPassword();
+      const envSearxngUrl = getEnvSearxngUrl();
+      const envSearxngEnabled = getEnvSearxngEnabled();
 
       // 使用新函数getEnvConfigStatus来获取环境变量配置状态
       const hasServerConfig = getEnvConfigStatus();
@@ -113,6 +123,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
               apiKey: parsedConfig.apiKey || '',
               allowUserConfig: userConfigAllowed,
               accessPassword: envAccessPassword || '',
+              searxng: parsedConfig.searxng || defaultApiConfig.searxng
             };
           } catch (e) {
             console.error('Failed to parse stored config:', e);
@@ -142,6 +153,14 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
           apiKey: "使用环境变量配置",
           allowUserConfig: userConfigAllowed,
           accessPassword: envAccessPassword || '',
+          searxng: {
+            url: envSearxngUrl || 'https://sousuo.emoe.top',
+            enabled: envSearxngEnabled,
+            categories: 'general',
+            language: 'zh',
+            timeRange: 'year',
+            numResults: 5
+          }
         };
         setIsConfigured(true); // 环境变量配置被视为已配置
       } else if (storedUserConfig) {

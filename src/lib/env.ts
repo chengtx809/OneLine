@@ -10,6 +10,8 @@ export function getEnvConfig(): EnvConfig {
     // 以下为客户端公开变量
     NEXT_PUBLIC_ALLOW_USER_CONFIG: process.env.NEXT_PUBLIC_ALLOW_USER_CONFIG,
     NEXT_PUBLIC_ACCESS_PASSWORD: process.env.NEXT_PUBLIC_ACCESS_PASSWORD,
+    NEXT_PUBLIC_SEARXNG_URL: process.env.NEXT_PUBLIC_SEARXNG_URL,
+    NEXT_PUBLIC_SEARXNG_ENABLED: process.env.NEXT_PUBLIC_SEARXNG_ENABLED,
   };
 }
 
@@ -79,4 +81,14 @@ export function validateAccessPassword(password: string): boolean {
   const envPassword = process.env.NEXT_PUBLIC_ACCESS_PASSWORD;
   if (!envPassword) return true; // 如果未设置密码，则任何密码都有效
   return password === envPassword;
+}
+
+// 获取环境变量中的SearXNG URL
+export function getEnvSearxngUrl(): string | undefined {
+  return process.env.NEXT_PUBLIC_SEARXNG_URL;
+}
+
+// 获取环境变量中的SearXNG启用状态
+export function getEnvSearxngEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_SEARXNG_ENABLED === 'true';
 }

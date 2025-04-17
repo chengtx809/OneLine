@@ -1,13 +1,15 @@
 import axios from 'axios';
-import { type ApiConfig, type TimelineData, TimelineEvent, type Person } from '@/types';
+import { type ApiConfig, type TimelineData, TimelineEvent, type Person, type SearxngResult, type SearxngSearchItem } from '@/types';
 
 // 修改系统提示，使用分段文本格式而不是JSON
 const SYSTEM_PROMPT = `
 你是一个专业的历史事件分析助手。我需要你将热点事件以时间轴的方式呈现。
+在回答问题前，你将获得搜索引擎的最新信息，请使用这些信息来确保你的回答是基于最新的事实。
+
 请按照以下格式返回数据（使用文本分段格式，不要使用JSON）：
 
 ===总结===
-对整个事件的简短总结
+对整个事件的简短总结，主要涵盖事件的起因、经过和目前状态。总结应该客观、准确，避免主观评价。
 
 ===事件列表===
 
@@ -33,8 +35,41 @@ const SYSTEM_PROMPT = `
 3. 同一立场的人物使用相似的颜色
 4. 尽可能客观描述各方观点和行为
 5. 为每个事件标注可能的信息来源
-6. 严格按照上述格式返回，不要添加其他格式
+6. 如果事件有具体的日期，请务必提供精确日期
+7. 严格按照上述格式返回，不要添加其他格式
+8. 对于有争议的事件，确保描述多方的观点
 `;
+
+// 详细事件分析的系统提示
+const EVENT_DETAILS_SYSTEM_PROMPT = `你是一个专业的历史事件分析助手，专长于提供详细的事件分析和背景信息。
+在回答问题前，你将获得搜索引擎的最新信息，请使用这些信息来确保你的回答是基于最新的事实。
+
+请按照以下格式回答用户询问的特定事件：
+
+===背景===
+事件的背景和前因，包括历史脉络、相关事件和潜在因素
+
+===详细内容===
+事件的主要内容，按时间顺序或重要性组织，尽量提供具体日期和事实
+
+===参与方===
+事件的主要参与者、相关人物及其立场和作用，对于有争议的观点，应列举不同方的陈述
+
+===影响===
+事件的短期和长期影响，包括政治、经济、社会或环境方面的影响
+
+===相关事实===
+与事件相关的重要事实或数据，包括引用出处的可靠统计数据、研究结果或官方信息
+
+请注意：
+1. 使用清晰的段落结构，避免过长的段落
+2. 保持客观中立的叙述，多角度展示事件
+3. 支持使用Markdown语法增强可读性：
+   - **粗体** 用于强调重要内容
+   - *斜体* 用于引用或细微强调
+   - 使用换行符增加可读性
+4. 回答应全面但精炼，突出重点，避免冗余
+5. 列出信息来源，特别是对有争议的观点`;
 
 // 解析文本响应，转换为TimelineData格式
 function parseTimelineText(text: string): TimelineData {
@@ -139,6 +174,72 @@ function getApiUrl(apiConfig: ApiConfig, endpoint = 'chat'): string {
   return `/api/${endpoint}`;
 }
 
+// 新增：执行SearXNG搜索
+export async function searchWithSearxng(
+  query: string,
+  apiConfig: ApiConfig
+): Promise<SearxngResult | null> {
+  try {
+    // 检查是否启用SearXNG
+    if (!apiConfig.searxng?.enabled || !apiConfig.searxng?.url) {
+      console.log('SearXNG搜索未启用或URL未配置');
+      return null;
+    }
+
+    const searxngUrl = apiConfig.searxng.url;
+    // 使用搜索API端点
+    const apiUrl = '/api/search';
+
+    const payload = {
+      query,
+      searxngUrl,
+      categories: apiConfig.searxng.categories || 'general',
+      language: apiConfig.searxng.language || 'zh',
+      timeRange: apiConfig.searxng.timeRange || 'year',
+      engines: apiConfig.searxng.engines || null,
+      numResults: apiConfig.searxng.numResults || 10
+    };
+
+    console.log('发送SearXNG搜索请求:', {
+      端点: apiUrl,
+      查询: query,
+      SearXNG: searxngUrl
+    });
+
+    const response = await axios.post(apiUrl, payload);
+    return response.data;
+  } catch (error) {
+    console.error("SearXNG搜索请求失败:", error);
+    return null;
+  }
+}
+
+// 格式化搜索结果为文本格式，供AI使用
+function formatSearchResultsForAI(results: SearxngResult | null): string {
+  if (!results || !results.results || results.results.length === 0) {
+    return "未找到相关搜索结果。";
+  }
+
+  // 取前5条结果
+  const topResults = results.results.slice(0, 5);
+
+  let formattedText = `以下是与"${results.query}"相关的最新搜索结果：\n\n`;
+
+  topResults.forEach((result, index) => {
+    formattedText += `[${index + 1}] ${result.title}\n`;
+    formattedText += `来源: ${result.url}\n`;
+    if (result.publishedDate) {
+      formattedText += `日期: ${result.publishedDate}\n`;
+    }
+    formattedText += `摘要: ${result.content}\n\n`;
+  });
+
+  formattedText += "请根据以上搜索结果和你已有的知识回答问题。特别是利用最新的事实和数据。";
+
+  return formattedText;
+}
+
+// 修改：fetchTimelineData函数，添加搜索支持
 export async function fetchTimelineData(
   query: string,
   apiConfig: ApiConfig
@@ -148,12 +249,24 @@ export async function fetchTimelineData(
     // 使用中间层API端点
     const apiUrl = getApiUrl(apiConfig, 'chat');
 
+    // 先执行搜索查询获取最新信息
+    let searchResults = null;
+    let searchContext = "";
+
+    if (apiConfig.searxng?.enabled) {
+      searchResults = await searchWithSearxng(query, apiConfig);
+      searchContext = formatSearchResultsForAI(searchResults);
+      console.log('获取到搜索结果:', searchResults ? '成功' : '失败');
+    }
+
     const payload = {
       model: model,
       endpoint: endpoint, // 传递endpoint给后端
       apiKey: apiKey, // 传递apiKey给后端
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
+        // 如果有搜索结果，添加到消息中
+        ...(searchContext ? [{ role: "system", content: searchContext }] : []),
         { role: "user", content: `请为以下事件创建时间轴：${query}` }
       ],
       temperature: 0.7
@@ -172,7 +285,8 @@ export async function fetchTimelineData(
     console.log('发送请求到服务器:', {
       使用环境变量: isUsingEnvConfig,
       端点: apiUrl,
-      模型: model
+      模型: model,
+      使用搜索: searchContext ? '是' : '否'
     });
 
     const response = await axios.post(apiUrl, payload, { headers });
@@ -188,6 +302,7 @@ export async function fetchTimelineData(
   }
 }
 
+// 修改：fetchEventDetails函数，添加搜索支持
 export async function fetchEventDetails(
   eventId: string,
   query: string,
@@ -198,6 +313,16 @@ export async function fetchEventDetails(
     // 使用新的 event-details 端点
     const apiUrl = getApiUrl(apiConfig, 'event-details');
 
+    // 先执行搜索查询获取最新信息
+    let searchResults = null;
+    let searchContext = "";
+
+    if (apiConfig.searxng?.enabled) {
+      searchResults = await searchWithSearxng(query, apiConfig);
+      searchContext = formatSearchResultsForAI(searchResults);
+      console.log('获取到事件详情搜索结果:', searchResults ? '成功' : '失败');
+    }
+
     const payload = {
       model: model,
       endpoint: endpoint, // 传递endpoint给后端
@@ -205,33 +330,10 @@ export async function fetchEventDetails(
       messages: [
         {
           role: "system",
-          content: `你是一个专业的历史事件分析助手，专长于提供详细的事件分析和背景信息。
-请按照以下格式回答用户询问的特定事件：
-
-===背景===
-事件的背景和前因
-
-===详细内容===
-事件的主要内容，按时间顺序或重要性组织
-
-===参与方===
-事件的主要参与者、相关人物及其立场和作用
-
-===影响===
-事件的短期和长期影响
-
-===相关事实===
-与事件相关的重要事实或数据
-
-请注意：
-1. 使用清晰的段落结构，避免过长的段落
-2. 保持客观中立的叙述，多角度展示事件
-3. 支持使用Markdown语法增强可读性：
-   - **粗体** 用于强调重要内容
-   - *斜体* 用于引用或细微强调
-   - 使用换行符增加可读性
-4. 回答应全面但精炼，突出重点，避免冗余`
+          content: EVENT_DETAILS_SYSTEM_PROMPT
         },
+        // 如果有搜索结果，添加到消息中
+        ...(searchContext ? [{ role: "system", content: searchContext }] : []),
         { role: "user", content: `请详细分析以下事件的背景、过程、影响及各方观点：${query}` }
       ],
       temperature: 0.7
@@ -250,7 +352,8 @@ export async function fetchEventDetails(
     console.log('发送事件详情请求到服务器:', {
       使用环境变量: isUsingEnvConfig,
       端点: apiUrl,
-      模型: model
+      模型: model,
+      使用搜索: searchContext ? '是' : '否'
     });
 
     const response = await axios.post(apiUrl, payload, { headers });
