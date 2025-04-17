@@ -46,6 +46,7 @@ const nextConfig = {
     NEXT_PUBLIC_API_KEY: process.env.NEXT_PUBLIC_API_KEY,
     NEXT_PUBLIC_ALLOW_USER_CONFIG: process.env.NEXT_PUBLIC_ALLOW_USER_CONFIG,
     NEXT_PUBLIC_ACCESS_PASSWORD: process.env.NEXT_PUBLIC_ACCESS_PASSWORD,
+    NEXT_PUBLIC_HAS_SERVER_CONFIG: !!process.env.API_ENDPOINT && !!process.env.API_KEY ? 'true' : 'false',
   },
 };
 

@@ -11,6 +11,12 @@ export async function POST(request: Request) {
     const apiEndpoint = process.env.API_ENDPOINT;
     const apiModel = process.env.API_MODEL || 'gemini-2.0-flash-exp-search';
 
+    console.log('API路由环境变量检测:', {
+      apiEndpoint: apiEndpoint ? '已设置' : '未设置',
+      apiKey: apiKey ? '已设置' : '未设置',
+      apiModel: apiModel
+    });
+
     // 解析请求体
     const requestData = await request.json();
 

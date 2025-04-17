@@ -20,18 +20,35 @@ export function isUserConfigAllowed(): boolean {
   return allowUserConfig === undefined || allowUserConfig === "true";
 }
 
+// 服务器API环境变量可用性检查
+export function hasServerEnvConfig(): boolean {
+  return !!process.env.API_ENDPOINT && !!process.env.API_KEY;
+}
+
+// 客户端检测环境变量配置状态的特殊标志
+export function getEnvConfigStatus(): boolean {
+  // 在服务端，检查实际的环境变量
+  if (typeof window === 'undefined') {
+    return hasServerEnvConfig();
+  }
+
+  // 在客户端，通过特殊的公开变量表明服务器API配置状态
+  // 这个值会在服务端渲染期间被计算并注入到前端
+  return process.env.NEXT_PUBLIC_HAS_SERVER_CONFIG === 'true';
+}
+
 // 获取环境变量中的API端点 - 客户端使用
 export function getEnvApiEndpoint(): string | undefined {
-  // 客户端不能直接访问服务器端环境变量，返回空字符串让客户端配置
+  // 客户端不能直接访问服务器端环境变量，服务器端会使用环境变量
   if (typeof window !== 'undefined') {
-    return ''; // 客户端返回空，需要用户手动配置
+    return ''; // 客户端返回空，需要用户手动配置或使用环境变量
   }
   return process.env.API_ENDPOINT;
 }
 
 // 获取环境变量中的API模型 - 客户端使用
 export function getEnvApiModel(): string | undefined {
-  // 客户端不能直接访问服务器端环境变量，使用默认模型
+  // 客户端使用默认模型
   if (typeof window !== 'undefined') {
     return 'gemini-2.0-flash-exp-search'; // 返回默认模型
   }
@@ -40,9 +57,9 @@ export function getEnvApiModel(): string | undefined {
 
 // 获取环境变量中的API密钥 - 客户端使用
 export function getEnvApiKey(): string | undefined {
-  // 客户端不能直接访问服务器端环境变量，返回空字符串让客户端配置
+  // 客户端不能直接访问服务器端环境变量
   if (typeof window !== 'undefined') {
-    return ''; // 客户端返回空，需要用户手动配置
+    return ''; // 客户端返回空，需要用户手动配置或使用环境变量
   }
   return process.env.API_KEY;
 }

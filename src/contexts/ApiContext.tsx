@@ -3,7 +3,7 @@
 import type React from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ApiConfig } from '@/types';
-import { getEnvApiEndpoint, getEnvApiKey, getEnvApiModel, isUserConfigAllowed, getEnvAccessPassword } from '@/lib/env';
+import { getEnvApiEndpoint, getEnvApiKey, getEnvApiModel, isUserConfigAllowed, getEnvAccessPassword, getEnvConfigStatus } from '@/lib/env';
 
 interface ApiContextType {
   apiConfig: ApiConfig;
@@ -67,9 +67,17 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       const envApiKey = getEnvApiKey();
       const envAccessPassword = getEnvAccessPassword();
 
-      // 检查环境变量中是否存在API配置
-      const hasServerConfig = !!envEndpoint && !!envApiKey;
+      // 使用新函数getEnvConfigStatus来获取环境变量配置状态
+      const hasServerConfig = getEnvConfigStatus();
       setHasEnvConfig(hasServerConfig);
+
+      console.log('初始化API上下文 - 环境变量检测:', {
+        hasServerConfig,
+        envEndpoint: envEndpoint ? '已设置' : '未设置',
+        envApiKey: envApiKey ? '已设置' : '未设置',
+        isClientSide: typeof window !== 'undefined',
+        envConfigStatus: process.env.NEXT_PUBLIC_HAS_SERVER_CONFIG
+      });
 
       // 设置是否启用密码保护
       setIsPasswordProtected(!!envAccessPassword);
