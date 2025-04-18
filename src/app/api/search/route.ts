@@ -46,6 +46,38 @@ export async function POST(request: Request) {
       }
     });
 
+    // 检查返回的数据是否符合预期格式
+    const data = response.data;
+    if (!data || typeof data !== 'object') {
+      console.error('SearXNG返回的数据格式不正确', data);
+      return NextResponse.json(
+        { error: 'Invalid response format from SearXNG', data },
+        { status: 500 }
+      );
+    }
+
+    // 确保结果字段存在且是数组
+    if (!Array.isArray(data.results)) {
+      console.warn('SearXNG返回的结果不是数组，尝试适配', data);
+
+      // 尝试适配响应格式
+      const adaptedData = {
+        query: query,
+        results: Array.isArray(data) ? data : [],
+        number_of_results: 0
+      };
+
+      if (adaptedData.results.length > 0) {
+        adaptedData.number_of_results = adaptedData.results.length;
+        return NextResponse.json(adaptedData);
+      } else {
+        return NextResponse.json(
+          { error: 'No results found in SearXNG response', originalData: data },
+          { status: 500 }
+        );
+      }
+    }
+
     // 返回搜索结果
     return NextResponse.json(response.data);
   } catch (error: any) {

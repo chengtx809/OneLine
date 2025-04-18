@@ -73,6 +73,7 @@ export interface SearxngResult {
   infoboxes?: any[];
   suggestions?: string[];
   unresponsive_engines?: string[];
+  number_of_results?: number; // 添加这个字段以匹配实际响应
 }
 
 export interface SearxngSearchItem {
@@ -80,8 +81,14 @@ export interface SearxngSearchItem {
   url: string;
   content: string;
   engine: string;
+  engines?: string[]; // 添加这个字段以匹配实际响应
+  positions?: number[]; // 添加这个字段以匹配实际响应
   score?: number;
   category?: string;
   img_src?: string;
+  thumbnail?: string; // 添加这个字段以匹配实际响应
   publishedDate?: string;
+  template?: string; // 添加这个字段以匹配实际响应
+  parsed_url?: string[]; // 添加这个字段以匹配实际响应
+  priority?: string; // 添加这个字段以匹配实际响应
 }
