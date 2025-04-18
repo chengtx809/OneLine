@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { type ApiConfig, type TimelineData, TimelineEvent, type Person, type SearxngResult, type SearxngSearchItem } from '@/types';
+import { enhancedSearch } from './searchEnhancer';
 
 // 修改系统提示，使用分段文本格式而不是JSON
 const SYSTEM_PROMPT = `
@@ -29,6 +30,25 @@ const SYSTEM_PROMPT = `
 
 ... 更多事件 ...
 
+处理多来源信息的指南：
+1. 当不同来源提供相互矛盾的信息时，尝试通过以下方式解决：
+   a. 优先考虑权威来源和一手资料
+   b. 比较不同来源的可信度和证据基础
+   c. 在事件描述中注明信息的差异和争议点
+   d. 如果无法确定哪个来源更可靠，可以在描述中列举不同的观点
+
+2. 对于最新进展的处理：
+   a. 优先使用最新的信息更新事件时间线
+   b. 标明哪些信息是最新的，以及它们的来源
+   c. 区分已确认的事实和尚未确认的报道
+   d. 对于重大变化或转折点，给予特别关注
+
+3. 多角度分析：
+   a. 尽量呈现事件的多个方面
+   b. 考虑不同参与方的立场和观点
+   c. 分析事件的短期和长期影响
+   d. 关注事件的历史背景和潜在发展方向
+
 请确保：
 1. 按时间先后顺序组织事件（从最早到最近）
 2. 为每个相关人物分配不同的颜色代码，让用户能够轻松识别不同人物的动向
@@ -49,19 +69,22 @@ const EVENT_DETAILS_SYSTEM_PROMPT = `你是一个专业的历史事件分析助�
 请按照以下格式回答用户询问的特定事件：
 
 ===背景===
-事件的背景和前因，包括历史脉络、相关事件和潜在因素。请尽可能提供具体的日期、人物和地点信息，让用户能够全面了解事件发生的时代背景和社会环境。
+事件的背景和前因，包括历史脉络、相关事件和潜在因素。请尽可能提供具体的日期、人物和地点信息，让用户能够全面了解事件发生的时代背景和社会环境。分析多种来源的信息，对比不同观点，尽可能全面客观地呈现事件的背景。
 
 ===详细内容===
-事件的主要内容，按时间顺序或重要性组织，必须提供具体日期和事实。详细描述事件的整个过程，包括重要转折点、关键决策和各方反应。对于复杂事件，可分阶段描述，确保逻辑清晰。
+事件的主要内容，按时间顺序或重要性组织，必须提供具体日期和事实。详细描述事件的整个过程，包括重要转折点、关键决策和各方反应。对于复杂事件，可分阶段描述，确保逻辑清晰。当不同来源对同一事件的描述存在差异时，请列出这些差异并分析可能的原因。
 
 ===参与方===
-事件的主要参与者、相关人物及其立场和作用，对于有争议的观点，应列举不同方的陈述。清晰说明各方利益关系、动机和目标，以及他们在事件中扮演的角色和产生的影响。
+事件的主要参与者、相关人物及其立场和作用，对于有争议的观点，应列举不同方的陈述。清晰说明各方利益关系、动机和目标，以及他们在事件中扮演的角色和产生的影响。比较不同参与方的观点和表述，分析其立场和动机背后的因素。
+
+===多源分析===
+从不同来源的信息中分析事件的全貌。当不同来源提供相互矛盾的信息时，比较其可信度和证据基础，指出哪些观点更有可能准确。注意信息来源的立场和偏见，并在分析中考虑这些因素。尽可能提供多角度的分析，让用户了解事件的复杂性。
 
 ===影响===
-事件的短期和长期影响，包括政治、经济、社会或环境方面的影响。分析事件引起的变化、后续发展和历史意义，以及对现今的持续影响。
+事件的短期和长期影响，包括政治、经济、社会或环境方面的影响。分析事件引起的变化、后续发展和历史意义，以及对现今的持续影响。评估不同来源对事件影响的不同解读，并提供你的综合分析。
 
 ===相关事实===
-与事件相关的重要事实或数据，包括引用出处的可靠统计数据、研究结果或官方信息。提供具体的数字、引用和实证资料，增强分析的可信度。
+与事件相关的重要事实或数据，包括引用出处的可靠统计数据、研究结果或官方信息。提供具体的数字、引用和实证资料，增强分析的可信度。比较不同来源提供的数据和事实，评估其一致性和准确性。
 
 请注意：
 1. 使用清晰的段落结构，避免过长的段落
@@ -75,6 +98,8 @@ const EVENT_DETAILS_SYSTEM_PROMPT = `你是一个专业的历史事件分析助�
 6. 尽可能提供精确的日期、地点和人物信息
 7. 对于重要事件，提供时间线形式的发展过程
 8. 使用小标题和列表增强内容的结构性和可读性
+9. 当面对相互矛盾的信息时，应分析信息来源的可靠性，并明确指出哪种说法更为可信
+10. 当搜索结果不充分时，明确指出信息的局限性，避免过度推断
 `;
 
 // 解析文本响应，转换为TimelineData格式
@@ -107,7 +132,7 @@ function parseTimelineText(text: string): TimelineData {
         const title = titleMatch?.[1]?.trim() || "";
 
         // 提取描述
-        const descMatch = block.match(/描述：\s*(.*?)(?=\s*相关人物：|$)/);
+        const descMatch = block.match(/描述：\s*([\s\S]*?)(?=\s*相关人物：|$)/);
         const description = descMatch?.[1]?.trim() || "";
 
         // 提取相关人物
@@ -133,7 +158,7 @@ function parseTimelineText(text: string): TimelineData {
               const simpleName = personEntry.split('(')[0].trim();
               if (simpleName) {
                 // 使用随机颜色
-                const randomColor = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+                const randomColor = `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
                 people.push({
                   name: simpleName,
                   role: "相关人物",
@@ -145,7 +170,7 @@ function parseTimelineText(text: string): TimelineData {
         }
 
         // 提取来源
-        const sourceMatch = block.match(/来源：\s*(.*?)(?=\s*--事件|$)/);
+        const sourceMatch = block.match(/来源：\s*([\s\S]*?)(?=\s*--事件|$)/);
         const source = sourceMatch?.[1]?.trim() || "未指明来源";
 
         // 创建事件对象
@@ -192,6 +217,28 @@ export async function searchWithSearxng(
       return null;
     }
 
+    // 使用增强搜索功能
+    console.log('使用增强搜索功能...');
+    return enhancedSearch(query, apiConfig);
+  } catch (error) {
+    console.error("SearXNG搜索请求失败:", error);
+
+    // 如果增强搜索失败，回退到简单搜索
+    console.log('增强搜索失败，回退到简单搜索...');
+    return simpleSearch(query, apiConfig);
+  }
+}
+
+// 简单搜索 - 作为后备方案
+async function simpleSearch(
+  query: string,
+  apiConfig: ApiConfig
+): Promise<SearxngResult | null> {
+  try {
+    if (!apiConfig.searxng?.enabled || !apiConfig.searxng?.url) {
+      return null;
+    }
+
     const searxngUrl = apiConfig.searxng.url;
     // 使用搜索API端点
     const apiUrl = '/api/search';
@@ -206,7 +253,7 @@ export async function searchWithSearxng(
       numResults: apiConfig.searxng.numResults || 10
     };
 
-    console.log('发送SearXNG搜索请求:', {
+    console.log('发送简单SearXNG搜索请求:', {
       端点: apiUrl,
       查询: query,
       SearXNG: searxngUrl
@@ -244,7 +291,7 @@ export async function searchWithSearxng(
 
     return response.data;
   } catch (error) {
-    console.error("SearXNG搜索请求失败:", error);
+    console.error("简单搜索请求失败:", error);
     return null;
   }
 }
@@ -255,13 +302,19 @@ function formatSearchResultsForAI(results: SearxngResult | null): string {
     return "未找到相关搜索结果。";
   }
 
-  // 取前5条结果
-  const topResults = results.results.slice(0, 5);
+  // 取最多10条结果
+  const topResults = results.results.slice(0, 10);
 
   let formattedText = `以下是与"${results.query}"相关的最新搜索结果：\n\n`;
 
   topResults.forEach((result, index) => {
-    formattedText += `[${index + 1}] ${result.title}\n`;
+    // 添加来源查询信息
+    if (result.fromQuery && result.fromQuery !== results.query) {
+      formattedText += `[${index + 1}] ${result.title} (来自查询: "${result.fromQuery}")\n`;
+    } else {
+      formattedText += `[${index + 1}] ${result.title}\n`;
+    }
+
     formattedText += `来源: ${result.url}\n`;
 
     // 检查结果中是否有publishedDate字段
@@ -287,6 +340,7 @@ function formatSearchResultsForAI(results: SearxngResult | null): string {
   formattedText += "3. 详细的事件描述，包括原因、经过和结果\n";
   formattedText += "4. 可靠的信息来源\n";
   formattedText += "5. 相关的背景和影响\n";
+  formattedText += "6. 尽可能分析不同来源信息的差异，整合最完整和准确的事实\n";
 
   return formattedText;
 }

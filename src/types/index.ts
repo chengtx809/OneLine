@@ -91,4 +91,5 @@ export interface SearxngSearchItem {
   template?: string; // 添加这个字段以匹配实际响应
   parsed_url?: string[]; // 添加这个字段以匹配实际响应
   priority?: string; // 添加这个字段以匹配实际响应
+  fromQuery?: string; // 添加这个字段用于标识结果来自哪个查询
 }
