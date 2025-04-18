@@ -12,7 +12,6 @@
 - 时间筛选功能，可按不同时间范围筛选事件
 - AI分析功能，提供事件的深入背景、过程、影响分析
 - 标记事件信息来源，增强可信度
-- 集成SearXNG搜索引擎，提供最新信息支持AI分析
 
 ## 技术栈
 
@@ -37,7 +36,6 @@ docker pull justincnn/oneline
 - API端点
 - 模型名称
 - API密钥
-- SearXNG搜索引擎（可选）
 
 ### 环境变量配置
 
@@ -66,12 +64,6 @@ NEXT_PUBLIC_ALLOW_USER_CONFIG=true
 # 设置后，用户需要输入正确的密码才能访问API设置
 # 这可以避免API被滥用，增强应用安全性
 NEXT_PUBLIC_ACCESS_PASSWORD=your_access_password_here
-
-# SearXNG搜索配置（可选）
-# SearXNG是一个元搜索引擎，可以聚合多个搜索引擎的结果
-# 启用后，AI将获取最新信息以提供更准确的回答
-NEXT_PUBLIC_SEARXNG_URL=https://sousuo.emoe.top
-NEXT_PUBLIC_SEARXNG_ENABLED=true
 ```
 
 **注意事项：**
@@ -80,17 +72,6 @@ NEXT_PUBLIC_SEARXNG_ENABLED=true
 - 当`NEXT_PUBLIC_ALLOW_USER_CONFIG`设置为`false`时，用户将无法在前端修改API设置
 - 当设置了`NEXT_PUBLIC_ACCESS_PASSWORD`时，用户需要输入正确的密码才能访问API设置
 - 当未设置环境变量时，将使用前端用户配置的设置
-
-### SearXNG 搜索集成
-
-OneLine 现已集成 SearXNG 搜索引擎，可以为 AI 提供最新的信息作为参考，使生成的时间轴和分析更加准确：
-
-1. **什么是 SearXNG**：SearXNG 是一个开源的元搜索引擎，可以汇总多个搜索引擎的结果
-2. **如何配置**：在"设置"页面的"搜索设置"标签中启用 SearXNG，并设置 SearXNG 服务器 URL
-3. **默认服务器**：应用默认配置了 `https://sousuo.emoe.top` 作为示例 SearXNG 服务器
-4. **工作原理**：当启用此功能后，OneLine 会先进行搜索查询，然后将搜索结果提供给 AI 作为参考来源
-
-**注意**：使用 SearXNG 可能会增加 API 请求的 token 数量，但会显著提高 AI 回答的准确性和时效性。
 
 ### Vercel 部署注意事项
 
