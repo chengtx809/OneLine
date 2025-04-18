@@ -8,8 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
 import type { SearxngConfig } from '@/types';
 
 interface ApiSettingsProps {
@@ -41,15 +39,6 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [isEnvConfigActive, setIsEnvConfigActive] = useState(false);
 
-  // 可用的搜索引擎分类
-  const engineCategories = {
-    '通用搜索': ['google', 'bing', 'brave', 'duckduckgo', 'baidu', 'yandex'],
-    '新闻': ['google news', 'bing news', 'baidu news', 'duckduckgo news'],
-    '学术': ['google scholar', 'semantic scholar', 'base', 'microsoft academic'],
-    '百科': ['wikipedia', 'wikidata'],
-    '社交媒体': ['reddit', 'twitter', 'youtube']
-  };
-
   // SearXNG配置状态
   const [searxngConfig, setSearxngConfig] = useState<SearxngConfig>({
     url: 'https://sousuo.emoe.top',
@@ -57,8 +46,7 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
     categories: 'general',
     language: 'zh',
     timeRange: 'year',
-    numResults: 5,
-    engines: []
+    numResults: 5
   });
 
   // 当前选中的设置标签
@@ -97,8 +85,7 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
           categories: apiConfig.searxng.categories || 'general',
           language: apiConfig.searxng.language || 'zh',
           timeRange: apiConfig.searxng.timeRange || 'year',
-          numResults: apiConfig.searxng.numResults || 5,
-          engines: apiConfig.searxng.engines || []
+          numResults: apiConfig.searxng.numResults || 5
         });
       }
     }
@@ -128,61 +115,8 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
     setError('');
   };
 
-  // 引擎选择处理函数
-  const handleEngineChange = (engine: string, checked: boolean) => {
-    setSearxngConfig(prev => {
-      const engines = prev.engines || [];
-      if (checked) {
-        // 添加引擎
-        return { ...prev, engines: [...engines, engine] };
-      } else {
-        // 移除引擎
-        return { ...prev, engines: engines.filter(e => e !== engine) };
-      }
-    });
-  };
-
-  // 选择引擎类别中的所有引擎
-  const selectCategoryEngines = (category: string, checked: boolean) => {
-    const categoryEngines = engineCategories[category as keyof typeof engineCategories] || [];
-    setSearxngConfig(prev => {
-      const currentEngines = prev.engines || [];
-      if (checked) {
-        // 添加类别中所有尚未选择的引擎
-        const newEngines = [...currentEngines];
-        categoryEngines.forEach(engine => {
-          if (!newEngines.includes(engine)) {
-            newEngines.push(engine);
-          }
-        });
-        return { ...prev, engines: newEngines };
-      } else {
-        // 移除该类别中的所有引擎
-        return {
-          ...prev,
-          engines: currentEngines.filter(engine => !categoryEngines.includes(engine))
-        };
-      }
-    });
-  };
-
-  // 检查类别中的引擎是否全部被选中
-  const isCategorySelected = (category: string) => {
-    const engines = searxngConfig.engines || [];
-    const categoryEngines = engineCategories[category as keyof typeof engineCategories] || [];
-    return categoryEngines.every(engine => engines.includes(engine));
-  };
-
-  // 检查类别中是否有部分引擎被选中
-  const isCategoryIndeterminate = (category: string) => {
-    const engines = searxngConfig.engines || [];
-    const categoryEngines = engineCategories[category as keyof typeof engineCategories] || [];
-    const hasSelected = categoryEngines.some(engine => engines.includes(engine));
-    return hasSelected && !isCategorySelected(category);
-  };
-
   // 更新SearXNG配置
-  const handleSearxngChange = (key: keyof SearxngConfig, value: string | boolean | number | string[]) => {
+  const handleSearxngChange = (key: keyof SearxngConfig, value: string | boolean | number) => {
     setSearxngConfig(prev => ({
       ...prev,
       [key]: value
@@ -557,64 +491,6 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
                           className="sm:col-span-3 rounded-lg"
                           disabled={!searxngConfig.enabled}
                         />
-                      </div>
-
-                      {/* 搜索引擎选择部分 */}
-                      <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-top gap-2 sm:gap-4 mt-4">
-                        <Label className="sm:text-right mt-2">
-                          搜索引擎选择
-                        </Label>
-                        <div className="sm:col-span-3">
-                          <div className="text-sm mb-2">选择要使用的搜索引擎，不选择则使用默认引擎</div>
-                          <ScrollArea className="h-[200px] rounded-md border p-4">
-                            <div className="space-y-4">
-                              {/* 按分类组织引擎选项 */}
-                              {Object.keys(engineCategories).map((category) => (
-                                <div key={category} className="space-y-2">
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={`category-${category}`}
-                                      checked={isCategorySelected(category)}
-                                      onCheckedChange={(checked) =>
-                                        selectCategoryEngines(category, checked === true)
-                                      }
-                                      disabled={!searxngConfig.enabled}
-                                    />
-                                    <label
-                                      htmlFor={`category-${category}`}
-                                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                    >
-                                      {category}
-                                    </label>
-                                  </div>
-                                  <div className="ml-6 space-y-1">
-                                    {engineCategories[category as keyof typeof engineCategories].map((engine) => (
-                                      <div key={engine} className="flex items-center space-x-2">
-                                        <Checkbox
-                                          id={`engine-${engine}`}
-                                          checked={(searxngConfig.engines || []).includes(engine)}
-                                          onCheckedChange={(checked) =>
-                                            handleEngineChange(engine, checked === true)
-                                          }
-                                          disabled={!searxngConfig.enabled}
-                                        />
-                                        <label
-                                          htmlFor={`engine-${engine}`}
-                                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                          {engine}
-                                        </label>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            提示: 选择特定引擎可提高搜索针对性，但可能降低结果覆盖面
-                          </div>
-                        </div>
                       </div>
                     </div>
 
