@@ -76,23 +76,27 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
         setUseEnvConfig(shouldUseEnvConfig);
       }
     }
-  }, []);
+  }, [setUseEnvConfig]); // 添加setUseEnvConfig到依赖数组
 
   // Update local state when apiConfig changes or dialog opens
   useEffect(() => {
     if (open) {
+      // 当对话框打开时，重新同步环境变量选择状态
+      setIsEnvConfigActive(useEnvConfig);
+
+      // 注意：不要在这里重置isEnvConfigActive，应该保持用户的选择
       if (useEnvConfig && hasEnvConfig) {
         // 如果使用环境变量配置，不显示实际值
         setEndpoint('');
         setModel('');
         setApiKey('');
-        setIsEnvConfigActive(true);
+        // 不再在这里设置isEnvConfigActive，而是依赖最初从localStorage加载的值
       } else {
         // 使用用户自定义配置
         setEndpoint(apiConfig.endpoint === "使用环境变量配置" ? "" : apiConfig.endpoint);
         setModel(apiConfig.model === "使用环境变量配置" ? "" : apiConfig.model);
         setApiKey(apiConfig.apiKey === "使用环境变量配置" ? "" : apiConfig.apiKey);
-        setIsEnvConfigActive(false);
+        // 不再在这里设置isEnvConfigActive，而是依赖最初从localStorage加载的值
       }
       setPassword('');
       setPasswordError('');

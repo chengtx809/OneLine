@@ -107,10 +107,9 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       // 客户端存储的配置
       let storedUserConfig: ApiConfig | null = null;
 
-      // 是否使用环境变量配置
-      let shouldUseEnvConfig = hasServerConfig;
+      // 从localStorage读取环境变量配置选择，并记录到控制台
+      let shouldUseEnvConfig = hasServerConfig; // 默认值与环境变量配置存在性一致
 
-      // 如果允许用户配置，尝试从localStorage加载
       if (typeof window !== 'undefined') {
         // 加载用户保存的配置
         const storedConfig = localStorage.getItem('oneLine_apiConfig');
@@ -134,10 +133,15 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         const storedUseEnvConfig = localStorage.getItem('oneLine_useEnvConfig');
         if (storedUseEnvConfig !== null) {
           shouldUseEnvConfig = storedUseEnvConfig === 'true';
-          console.log('从localStorage加载环境变量配置选择:', shouldUseEnvConfig);
+          console.log('从localStorage读取环境变量配置选择:', shouldUseEnvConfig);
+        } else {
+          // 如果localStorage中没有保存选择，那么初始化它
+          localStorage.setItem('oneLine_useEnvConfig', shouldUseEnvConfig.toString());
+          console.log('首次初始化环境变量配置选择:', shouldUseEnvConfig);
         }
       }
 
+      // 立即设置状态以确保组件挂载时就有正确的值
       setUseEnvConfig(shouldUseEnvConfig);
 
       // 保存用户配置，以备切换
