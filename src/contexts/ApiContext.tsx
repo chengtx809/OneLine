@@ -107,10 +107,27 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       // 客户端存储的配置
       let storedUserConfig: ApiConfig | null = null;
 
-      // 从localStorage读取环境变量配置选择，并记录到控制台
+      // 从localStorage读取环境变量配置选择
       let shouldUseEnvConfig = hasServerConfig; // 默认值与环境变量配置存在性一致
 
       if (typeof window !== 'undefined') {
+        // 先检查localStorage中是否有环境变量配置选择
+        const storedUseEnvConfig = localStorage.getItem('oneLine_useEnvConfig');
+        if (storedUseEnvConfig !== null) {
+          shouldUseEnvConfig = storedUseEnvConfig === 'true';
+          console.log('从localStorage读取环境变量配置选择:', shouldUseEnvConfig);
+        } else if (hasServerConfig) {
+          // 如果没有存储值但有环境配置，默认使用环境配置并保存选择
+          shouldUseEnvConfig = true; // 明确设置为true
+          localStorage.setItem('oneLine_useEnvConfig', 'true');
+          console.log('首次初始化环境变量配置选择为true并保存');
+        } else {
+          // 没有环境配置，则默认不使用并保存选择
+          shouldUseEnvConfig = false; // 明确设置为false
+          localStorage.setItem('oneLine_useEnvConfig', 'false');
+          console.log('首次初始化环境变量配置选择为false并保存');
+        }
+
         // 加载用户保存的配置
         const storedConfig = localStorage.getItem('oneLine_apiConfig');
         if (storedConfig) {
@@ -127,17 +144,6 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {
             console.error('Failed to parse stored config:', e);
           }
-        }
-
-        // 加载用户的选择（是否使用环境变量配置）
-        const storedUseEnvConfig = localStorage.getItem('oneLine_useEnvConfig');
-        if (storedUseEnvConfig !== null) {
-          shouldUseEnvConfig = storedUseEnvConfig === 'true';
-          console.log('从localStorage读取环境变量配置选择:', shouldUseEnvConfig);
-        } else {
-          // 如果localStorage中没有保存选择，那么初始化它
-          localStorage.setItem('oneLine_useEnvConfig', shouldUseEnvConfig.toString());
-          console.log('首次初始化环境变量配置选择:', shouldUseEnvConfig);
         }
       }
 
@@ -188,11 +194,13 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
   // 更新是否使用环境变量配置
   const handleUseEnvConfig = (use: boolean) => {
+    console.log('切换环境变量配置状态:', use);
     setUseEnvConfig(use);
 
     // 保存用户选择到localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('oneLine_useEnvConfig', use.toString());
+      console.log('已保存环境变量配置选择到localStorage:', use);
     }
 
     if (use && hasEnvConfig) {
@@ -215,8 +223,30 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     // 如果不允许用户配置，则不更新
     if (!allowUserConfig) return;
 
-    // 如果当前使用环境变量配置，则切换到用户自定义配置
-    if (useEnvConfig) {
+    // 如果传入的配置只包含searxng，并且当前使用环境变量配置
+    const isSearxngOnlyUpdate = Object.keys(config).length === 1 && 'searxng' in config;
+
+    // 如果只是更新SearXNG配置并且使用环境变量配置，我们需要特殊处理
+    if (useEnvConfig && isSearxngOnlyUpdate && config.searxng) {
+      setApiConfig(prev => {
+        const newConfig = {
+          ...prev,
+          searxng: config.searxng
+        };
+
+        // 保存这个带有新SearXNG配置的配置
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('oneLine_apiConfig', JSON.stringify(newConfig));
+          console.log('更新了SearXNG配置(使用环境变量配置模式)');
+        }
+
+        return newConfig;
+      });
+      return; // 提前返回，不执行下面的代码
+    }
+
+    // 只有当更新的不仅仅是searxng配置时，才切换到用户配置
+    if (useEnvConfig && !isSearxngOnlyUpdate) {
       setUseEnvConfig(false);
       // 保存选择到localStorage
       if (typeof window !== 'undefined') {

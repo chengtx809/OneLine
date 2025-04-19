@@ -73,24 +73,36 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
       if (storedUseEnvConfig !== null) {
         const shouldUseEnvConfig = storedUseEnvConfig === 'true';
         setIsEnvConfigActive(shouldUseEnvConfig);
-        // 使用函数式更新避免依赖项问题
-        if (setUseEnvConfig) {
-          setUseEnvConfig(shouldUseEnvConfig);
-        }
+        // 使用setUseEnvConfig函数来更新上下文中的状态
+        setUseEnvConfig(shouldUseEnvConfig);
+      } else if (hasEnvConfig) {
+        // 如果localStorage中没有值但有环境变量配置，默认使用环境变量配置
+        setIsEnvConfigActive(true);
+        setUseEnvConfig(true);
+        // 保存默认选择到localStorage
+        localStorage.setItem('oneLine_useEnvConfig', 'true');
       }
     }
-  }, []); // 移除setUseEnvConfig依赖
+  }, [hasEnvConfig, setUseEnvConfig]); // 添加hasEnvConfig作为依赖项
 
   // Update local state when apiConfig changes or dialog opens
   useEffect(() => {
     if (open) {
-      // 当对话框打开时，重新同步环境变量选择状态
-      const storedUseEnvConfig = localStorage.getItem('oneLine_useEnvConfig');
-      const shouldUseEnvConfig = storedUseEnvConfig === 'true';
-      if (storedUseEnvConfig !== null) {
-        setIsEnvConfigActive(shouldUseEnvConfig);
+      // 当对话框打开时，从localStorage读取环境变量选择状态
+      if (typeof window !== 'undefined') {
+        const storedUseEnvConfig = localStorage.getItem('oneLine_useEnvConfig');
+        if (storedUseEnvConfig !== null) {
+          const shouldUseEnvConfig = storedUseEnvConfig === 'true';
+          setIsEnvConfigActive(shouldUseEnvConfig);
+          // 确保context中的状态与本地状态同步
+          setUseEnvConfig(shouldUseEnvConfig);
+          console.log('对话框打开时加载环境变量配置选择:', shouldUseEnvConfig);
+        } else {
+          // 默认与当前context中的值保持一致
+          setIsEnvConfigActive(useEnvConfig);
+        }
       } else {
-        // 如果没有存储的值，则使用当前的useEnvConfig状态
+        // 服务器端渲染，默认与当前context中的值保持一致
         setIsEnvConfigActive(useEnvConfig);
       }
 
@@ -124,7 +136,7 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
         });
       }
     }
-  }, [apiConfig, open, useEnvConfig, hasEnvConfig]);
+  }, [apiConfig, open, useEnvConfig, hasEnvConfig, setUseEnvConfig]);
 
   const handlePasswordSubmit = () => {
     if (!password.trim()) {
@@ -147,10 +159,8 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
       const newValue = !isEnvConfigActive;
       setIsEnvConfigActive(newValue);
 
-      // 使用函数式更新，避免依赖项问题
-      if (setUseEnvConfig) {
-        setUseEnvConfig(newValue);
-      }
+      // 更新上下文中的状态
+      setUseEnvConfig(newValue);
 
       // 保存选择到localStorage
       if (typeof window !== 'undefined') {
@@ -160,6 +170,15 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
 
       // 清除错误信息
       setError('');
+
+      // 切换后显示确认消息
+      if (newValue) {
+        setError('已切换到环境变量配置模式');
+      } else {
+        setError('已切换到用户自定义配置模式');
+      }
+      // 3秒后清除消息
+      setTimeout(() => setError(''), 3000);
     } catch (err) {
       console.error('切换环境变量配置时出错:', err);
       setError('切换设置时出错，请重试');
@@ -268,7 +287,7 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
       return;
     }
 
-    // 如果使用环境变量配置，则直接关闭对话框
+    // 如果使用环境变量配置，确保SearXNG配置也能正确保存
     if (isEnvConfigActive && hasEnvConfig) {
       // 只更新SearXNG配置，保留环境变量配置
       updateApiConfig({
@@ -278,7 +297,7 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
       return;
     }
 
-    // Validate inputs
+    // Validate inputs for user custom configuration
     if (!endpoint.trim()) {
       setError('API端点不能为空');
       return;
