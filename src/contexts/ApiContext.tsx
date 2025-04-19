@@ -2,7 +2,7 @@
 
 import type React from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
-import type { ApiConfig, SearxngConfig } from '@/types';
+import type { ApiConfig } from '@/types';
 import { getEnvApiEndpoint, getEnvApiKey, getEnvApiModel, isUserConfigAllowed, getEnvAccessPassword, getEnvConfigStatus, getEnvSearxngUrl, getEnvSearxngEnabled } from '@/lib/env';
 
 interface ApiContextType {
@@ -195,6 +195,13 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
   // 更新是否使用环境变量配置
   const handleUseEnvConfig = (use: boolean) => {
     console.log('切换环境变量配置状态:', use);
+
+    // 避免不必要的更新，如果状态没有变化，直接返回
+    if (use === useEnvConfig) {
+      console.log('环境变量配置状态未改变，跳过更新');
+      return;
+    }
+
     setUseEnvConfig(use);
 
     // 保存用户选择到localStorage
@@ -228,6 +235,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
     // 如果只是更新SearXNG配置并且使用环境变量配置，我们需要特殊处理
     if (useEnvConfig && isSearxngOnlyUpdate && config.searxng) {
+      // 创建新的apiConfig对象但保持环境变量配置状态不变
       setApiConfig(prev => {
         const newConfig = {
           ...prev,
@@ -247,13 +255,16 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
     // 只有当更新的不仅仅是searxng配置时，才切换到用户配置
     if (useEnvConfig && !isSearxngOnlyUpdate) {
+      // 设置本地的useEnvConfig状态而不是反复调用handleUseEnvConfig
       setUseEnvConfig(false);
+
       // 保存选择到localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('oneLine_useEnvConfig', 'false');
       }
     }
 
+    // 更新apiConfig
     setApiConfig(prev => {
       const newConfig = { ...prev, ...config };
 

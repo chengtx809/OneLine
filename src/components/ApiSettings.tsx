@@ -73,17 +73,22 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
       if (storedUseEnvConfig !== null) {
         const shouldUseEnvConfig = storedUseEnvConfig === 'true';
         setIsEnvConfigActive(shouldUseEnvConfig);
-        // 使用setUseEnvConfig函数来更新上下文中的状态
-        setUseEnvConfig(shouldUseEnvConfig);
+        // 不要在useEffect中调用setUseEnvConfig，避免循环更新
       } else if (hasEnvConfig) {
         // 如果localStorage中没有值但有环境变量配置，默认使用环境变量配置
         setIsEnvConfigActive(true);
-        setUseEnvConfig(true);
-        // 保存默认选择到localStorage
+        // 保存默认选择到localStorage，但不更新上下文
         localStorage.setItem('oneLine_useEnvConfig', 'true');
       }
     }
-  }, [hasEnvConfig, setUseEnvConfig]); // 添加hasEnvConfig作为依赖项
+  }, [hasEnvConfig]); // 只依赖hasEnvConfig
+
+  // 同步本地状态和上下文状态 - 只在组件挂载和isEnvConfigActive变化时执行一次
+  useEffect(() => {
+    if (isMounted && isEnvConfigActive !== useEnvConfig) {
+      setUseEnvConfig(isEnvConfigActive);
+    }
+  }, [isMounted, isEnvConfigActive, useEnvConfig, setUseEnvConfig]);
 
   // Update local state when apiConfig changes or dialog opens
   useEffect(() => {
@@ -94,8 +99,7 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
         if (storedUseEnvConfig !== null) {
           const shouldUseEnvConfig = storedUseEnvConfig === 'true';
           setIsEnvConfigActive(shouldUseEnvConfig);
-          // 确保context中的状态与本地状态同步
-          setUseEnvConfig(shouldUseEnvConfig);
+          // 不在这里调用setUseEnvConfig，避免循环更新
           console.log('对话框打开时加载环境变量配置选择:', shouldUseEnvConfig);
         } else {
           // 默认与当前context中的值保持一致
@@ -136,7 +140,7 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
         });
       }
     }
-  }, [apiConfig, open, useEnvConfig, hasEnvConfig, setUseEnvConfig]);
+  }, [apiConfig, open, useEnvConfig, hasEnvConfig]); // 移除setUseEnvConfig依赖
 
   const handlePasswordSubmit = () => {
     if (!password.trim()) {
@@ -157,10 +161,14 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
     try {
       // 切换环境变量配置状态
       const newValue = !isEnvConfigActive;
-      setIsEnvConfigActive(newValue);
 
-      // 更新上下文中的状态
-      setUseEnvConfig(newValue);
+      // 如果状态没有变化，不执行任何操作
+      if (newValue === isEnvConfigActive) {
+        return;
+      }
+
+      // 首先设置本地状态
+      setIsEnvConfigActive(newValue);
 
       // 保存选择到localStorage
       if (typeof window !== 'undefined') {
