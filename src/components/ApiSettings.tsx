@@ -73,31 +73,40 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
       if (storedUseEnvConfig !== null) {
         const shouldUseEnvConfig = storedUseEnvConfig === 'true';
         setIsEnvConfigActive(shouldUseEnvConfig);
-        setUseEnvConfig(shouldUseEnvConfig);
+        // 使用函数式更新避免依赖项问题
+        if (setUseEnvConfig) {
+          setUseEnvConfig(shouldUseEnvConfig);
+        }
       }
     }
-  }, [setUseEnvConfig]); // 添加setUseEnvConfig到依赖数组
+  }, []); // 移除setUseEnvConfig依赖
 
   // Update local state when apiConfig changes or dialog opens
   useEffect(() => {
     if (open) {
       // 当对话框打开时，重新同步环境变量选择状态
-      setIsEnvConfigActive(useEnvConfig);
+      const storedUseEnvConfig = localStorage.getItem('oneLine_useEnvConfig');
+      const shouldUseEnvConfig = storedUseEnvConfig === 'true';
+      if (storedUseEnvConfig !== null) {
+        setIsEnvConfigActive(shouldUseEnvConfig);
+      } else {
+        // 如果没有存储的值，则使用当前的useEnvConfig状态
+        setIsEnvConfigActive(useEnvConfig);
+      }
 
-      // 注意：不要在这里重置isEnvConfigActive，应该保持用户的选择
+      // 根据环境变量配置状态设置输入字段
       if (useEnvConfig && hasEnvConfig) {
         // 如果使用环境变量配置，不显示实际值
         setEndpoint('');
         setModel('');
         setApiKey('');
-        // 不再在这里设置isEnvConfigActive，而是依赖最初从localStorage加载的值
       } else {
         // 使用用户自定义配置
         setEndpoint(apiConfig.endpoint === "使用环境变量配置" ? "" : apiConfig.endpoint);
         setModel(apiConfig.model === "使用环境变量配置" ? "" : apiConfig.model);
         setApiKey(apiConfig.apiKey === "使用环境变量配置" ? "" : apiConfig.apiKey);
-        // 不再在这里设置isEnvConfigActive，而是依赖最初从localStorage加载的值
       }
+
       setPassword('');
       setPasswordError('');
       setError('');
@@ -133,18 +142,28 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
   };
 
   const handleToggleEnvConfig = () => {
-    // 切换环境变量配置状态
-    const newValue = !isEnvConfigActive;
-    setIsEnvConfigActive(newValue);
-    setUseEnvConfig(newValue);
+    try {
+      // 切换环境变量配置状态
+      const newValue = !isEnvConfigActive;
+      setIsEnvConfigActive(newValue);
 
-    // 保存选择到localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('oneLine_useEnvConfig', newValue.toString());
+      // 使用函数式更新，避免依赖项问题
+      if (setUseEnvConfig) {
+        setUseEnvConfig(newValue);
+      }
+
+      // 保存选择到localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('oneLine_useEnvConfig', newValue.toString());
+        console.log('保存环境变量配置选择到localStorage:', newValue);
+      }
+
+      // 清除错误信息
+      setError('');
+    } catch (err) {
+      console.error('切换环境变量配置时出错:', err);
+      setError('切换设置时出错，请重试');
     }
-
-    // 清除错误信息
-    setError('');
   };
 
   // 引擎选择处理函数
