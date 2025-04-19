@@ -92,4 +92,6 @@ export interface SearxngSearchItem {
   parsed_url?: string[]; // 添加这个字段以匹配实际响应
   priority?: string; // 添加这个字段以匹配实际响应
   fromQuery?: string; // 添加这个字段用于标识结果来自哪个查询
+  fullContent?: string; // 添加这个字段用于存储完整的网页内容
+  contentExtracted?: boolean; // 标记是否已提取了网页内容
 }

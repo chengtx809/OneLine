@@ -518,6 +518,85 @@ function calculateRelevanceScore(
 }
 
 /**
+ * 获取网页内容
+ * @param url 网页URL
+ * @returns 网页内容的文本
+ */
+async function fetchWebContent(url: string): Promise<string | null> {
+  try {
+    console.log(`正在通过服务器API抓取网页内容: ${url}`);
+
+    // 使用服务器端API来获取网页内容，避免CORS问题
+    const response = await axios.post('/api/webpage-content', {
+      url: url,
+      timeout: 10000
+    });
+
+    // 检查API响应
+    if (response.data && response.data.content) {
+      console.log(`成功获取网页内容: ${url} (${response.data.content_length} 字符)`);
+      return response.data.content;
+    }
+
+    // API请求成功但未返回内容
+    if (response.data && response.data.error) {
+      console.error(`网页内容API错误: ${response.data.error} - ${response.data.message}`);
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`抓取网页内容失败: ${url}`, error);
+    return null;
+  }
+}
+
+/**
+ * 批量获取网页内容
+ * @param results 搜索结果数组
+ * @param maxItems 最大处理项数
+ * @returns 带有网页内容的搜索结果
+ */
+async function enrichResultsWithWebContent(results: SearxngSearchItem[], maxItems: number = 5): Promise<SearxngSearchItem[]> {
+  // 仅处理前 maxItems 个结果以提高性能
+  const topResults = results.slice(0, maxItems);
+
+  // 并行获取网页内容，但限制最大并发数
+  const enrichedResults: SearxngSearchItem[] = [];
+
+  // 顺序处理，避免并发请求过多
+  for (const result of topResults) {
+    try {
+      // 尝试获取网页内容
+      const webContent = await fetchWebContent(result.url);
+
+      if (webContent) {
+        // 添加网页完整内容到结果中
+        enrichedResults.push({
+          ...result,
+          fullContent: webContent,  // 添加新字段存储完整内容
+          contentExtracted: true    // 标记内容已提取
+        });
+        console.log(`成功提取 ${result.url} 的内容`);
+      } else {
+        // 如果无法获取内容，保留原始结果
+        enrichedResults.push(result);
+      }
+    } catch (error) {
+      console.error(`处理结果内容时出错: ${result.url}`, error);
+      enrichedResults.push(result);
+    }
+
+    // 短暂延迟，避免请求过快
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  // 添加未处理的其余结果
+  enrichedResults.push(...results.slice(maxItems));
+
+  return enrichedResults;
+}
+
+/**
  * 使用智能拆分和并行搜索获取更全面的结果
  * @param query 原始查询词
  * @param apiConfig API配置
@@ -540,5 +619,23 @@ export async function enhancedSearch(
   console.log('查询拆分结果:', queries);
 
   // 2. 并行执行搜索
-  return parallelSearch(queries, apiConfig, searxngUrl);
+  const searchResults = await parallelSearch(queries, apiConfig, searxngUrl);
+
+  // 3. 使用网页内容丰富搜索结果
+  if (searchResults && searchResults.results && searchResults.results.length > 0) {
+    console.log('正在获取网页内容以丰富搜索结果...');
+    try {
+      const enrichedResults = await enrichResultsWithWebContent(searchResults.results);
+      return {
+        ...searchResults,
+        results: enrichedResults
+      };
+    } catch (error) {
+      console.error('丰富搜索结果失败:', error);
+      // 如果网页内容获取失败，返回原始搜索结果
+      return searchResults;
+    }
+  }
+
+  return searchResults;
 }

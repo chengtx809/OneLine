@@ -70,6 +70,11 @@ export async function POST(request: Request) {
       num_results: requestData.numResults || 10, // 默认返回10条结果
     };
 
+    // 添加获取网页内容参数，决定是否SearXNG直接提取内容
+    if (requestData.fetch_content === true) {
+      params.fetch_content = true;
+    }
+
     // 添加安全搜索参数，如果提供
     if (requestData.safesearch !== undefined) {
       params.safesearch = requestData.safesearch;

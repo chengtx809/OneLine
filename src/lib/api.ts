@@ -330,17 +330,32 @@ function formatSearchResultsForAI(results: SearxngResult | null): string {
     // 添加搜索引擎信息
     formattedText += `引擎: ${result.engine || (result.engines && result.engines.join(', '))}\n`;
 
-    // 添加内容/摘要
-    formattedText += `摘要: ${result.content}\n\n`;
+    // 使用完整的网页内容（如果可用），否则使用摘要
+    if (result.fullContent && result.contentExtracted) {
+      // 如果有完整的网页内容，添加更详细的内容
+      formattedText += `内容: ${result.content}\n`;
+      formattedText += `网页详情: ${result.fullContent.substring(0, 1500)}`;
+
+      // 如果内容过长，添加省略号
+      if (result.fullContent.length > 1500) {
+        formattedText += "...(内容已截断)";
+      }
+
+      formattedText += "\n\n";
+    } else {
+      // 否则使用原始摘要
+      formattedText += `摘要: ${result.content}\n\n`;
+    }
   });
 
-  formattedText += "请根据以上搜索结果和你已有的知识回答问题。特别是利用最新的事实和数据。为每个事件尽可能提供详细信息，包括：\n";
+  formattedText += "请根据以上搜索结果和你已有的知识回答问题。特别是利用最新的事实和数据以及网页的完整内容。为每个事件尽可能提供详细信息，包括：\n";
   formattedText += "1. 精确的日期（年月日）\n";
   formattedText += "2. 参与的人物及其角色\n";
   formattedText += "3. 详细的事件描述，包括原因、经过和结果\n";
   formattedText += "4. 可靠的信息来源\n";
   formattedText += "5. 相关的背景和影响\n";
   formattedText += "6. 尽可能分析不同来源信息的差异，整合最完整和准确的事实\n";
+  formattedText += "7. 利用网页详情获取更深入的内容和观点\n";
 
   return formattedText;
 }
