@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import axios from 'axios';
 
 // 增加超时时间以处理更多并行请求和多引擎搜索
-const DEFAULT_TIMEOUT_MS = 15000; // 默认15秒
-const MAX_TIMEOUT_MS = 30000; // 最大超时30秒
+const DEFAULT_TIMEOUT_MS = 30000; // 默认30秒
+const MAX_TIMEOUT_MS = 60000; // 最大超时60秒
 
 // 搜索引擎列表，用于UI展示和配置
 export const AVAILABLE_ENGINES = [

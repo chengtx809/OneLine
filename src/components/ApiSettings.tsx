@@ -67,6 +67,15 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
   // 确保组件已挂载（客户端渲染）
   useEffect(() => {
     setIsMounted(true);
+    // 从localStorage获取是否使用环境变量配置的设置
+    if (typeof window !== 'undefined') {
+      const storedUseEnvConfig = localStorage.getItem('oneLine_useEnvConfig');
+      if (storedUseEnvConfig !== null) {
+        const shouldUseEnvConfig = storedUseEnvConfig === 'true';
+        setIsEnvConfigActive(shouldUseEnvConfig);
+        setUseEnvConfig(shouldUseEnvConfig);
+      }
+    }
   }, []);
 
   // Update local state when apiConfig changes or dialog opens
@@ -121,8 +130,14 @@ export function ApiSettings({ open, onOpenChange }: ApiSettingsProps) {
 
   const handleToggleEnvConfig = () => {
     // 切换环境变量配置状态
-    setIsEnvConfigActive(!isEnvConfigActive);
-    setUseEnvConfig(!isEnvConfigActive);
+    const newValue = !isEnvConfigActive;
+    setIsEnvConfigActive(newValue);
+    setUseEnvConfig(newValue);
+
+    // 保存选择到localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('oneLine_useEnvConfig', newValue.toString());
+    }
 
     // 清除错误信息
     setError('');

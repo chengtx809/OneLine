@@ -111,7 +111,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
       let shouldUseEnvConfig = hasServerConfig;
 
       // 如果允许用户配置，尝试从localStorage加载
-      if (userConfigAllowed && typeof window !== 'undefined') {
+      if (typeof window !== 'undefined') {
         // 加载用户保存的配置
         const storedConfig = localStorage.getItem('oneLine_apiConfig');
         if (storedConfig) {
@@ -134,6 +134,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         const storedUseEnvConfig = localStorage.getItem('oneLine_useEnvConfig');
         if (storedUseEnvConfig !== null) {
           shouldUseEnvConfig = storedUseEnvConfig === 'true';
+          console.log('从localStorage加载环境变量配置选择:', shouldUseEnvConfig);
         }
       }
 
