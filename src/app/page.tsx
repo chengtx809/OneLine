@@ -67,14 +67,11 @@ function MainContent() {
   // 新增处理滚动的函数
   const scrollToTimeline = () => {
     if (timelineRef.current) {
-      const header = document.querySelector('header');
-      const headerHeight = header?.offsetHeight || 0;
-      const yOffset = -headerHeight - 20; // 额外空间
-      const y = timelineRef.current.getBoundingClientRect().top + window.scrollY + yOffset;
-
-      window.scrollTo({
-        top: y,
-        behavior: 'smooth'
+      // 由于现在整个布局是自然流动的，不需要复杂的计算
+      // 只需简单的滚动到时间轴元素即可
+      timelineRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
       });
     }
   };
@@ -272,10 +269,6 @@ function MainContent() {
       // 显示时间轴，添加动画延迟
       setTimeout(() => {
         setTimelineVisible(true);
-        // 滚动到时间轴
-        if (data.events.length > 0) {
-          setTimeout(scrollToTimeline, 300);
-        }
 
         // 标记进度显示为非活动状态，但仍然保持可见，让用户可以查看进度历史
         setSearchProgressActive(false);
@@ -457,116 +450,116 @@ function MainContent() {
         </div>
       </header>
 
-      {/* 搜索表单 - 可以在中央和顶部之间切换 */}
-      <form
-        ref={searchRef}
-        onSubmit={handleSubmit}
-        className={searchPosition === 'center' ? 'search-container-center' : 'search-container-top'}
-      >
-        {searchPosition === 'center' && (
-          <div className="flex flex-col items-center mb-8 animate-slide-down">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center page-title">一线</h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 text-center max-w-xl mx-auto">
-              AI驱动的热点事件时间轴 · 洞察历史脉络
-            </p>
-          </div>
-        )}
-
-        <div className="p-4 w-full">
-          <div className="glass-card rounded-full overflow-hidden flex items-center p-1 pr-2">
-            <Input
-              type="text"
-              placeholder="输入关键词，如：俄乌冲突、中美贸易..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 border-0 bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground/70"
-            />
-
-            <div className="flex items-center">
-              <Select
-                value={dateFilter.option}
-                onValueChange={handleDateFilterChange as (value: string) => void}
-                defaultValue="all"
-              >
-                <SelectTrigger className="w-auto border-0 bg-transparent mr-2 focus:ring-0">
-                  <div className="flex items-center">
-                    <ChevronDown size={14} className="mr-1 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      {dateFilter.option === 'all' && '所有时间'}
-                      {dateFilter.option === 'month' && '近一个月'}
-                      {dateFilter.option === 'halfYear' && '近半年'}
-                      {dateFilter.option === 'year' && '近一年'}
-                      {dateFilter.option === 'custom' && '自定义'}
-                    </span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="glass-card border-0">
-                  <SelectItem value="all">所有时间</SelectItem>
-                  <SelectItem value="month">近一个月</SelectItem>
-                  <SelectItem value="halfYear">近半年</SelectItem>
-                  <SelectItem value="year">近一年</SelectItem>
-                  <SelectItem value="custom">自定义</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                type="submit"
-                size="icon"
-                disabled={isLoading}
-                className="rounded-full aspect-square h-9 w-9 bg-primary hover:bg-primary/90"
-              >
-                {isLoading ?
-                  <div className="loading-spinner" /> :
-                  <Search size={16} />
-                }
-              </Button>
-            </div>
-          </div>
-
-          {/* 自定义日期范围输入 */}
-          {dateFilter.option === 'custom' && (
-            <div className="flex flex-col sm:flex-row gap-2 mt-3 glass p-3 rounded-xl">
-              <div className="flex-1 flex gap-2 items-center">
-                <label htmlFor="start-date" className="text-sm whitespace-nowrap">开始日期:</label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={startDate}
-                  onChange={handleStartDateChange}
-                  className="flex-1 glass-input text-sm h-8"
-                />
-              </div>
-              <div className="flex-1 flex gap-2 items-center">
-                <label htmlFor="end-date" className="text-sm whitespace-nowrap">结束日期:</label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={endDate}
-                  onChange={handleEndDateChange}
-                  className="flex-1 glass-input text-sm h-8"
-                />
-              </div>
+      {/* 内容容器 */}
+      <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pb-12">
+        {/* 搜索表单 - 可以在中央和顶部之间切换 */}
+        <form
+          ref={searchRef}
+          onSubmit={handleSubmit}
+          className={searchPosition === 'center' ? 'search-container-center' : 'search-container-top'}
+        >
+          {searchPosition === 'center' && (
+            <div className="flex flex-col items-center mb-8 animate-slide-down">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center page-title">一线</h1>
+              <p className="text-lg md:text-xl text-muted-foreground mb-8 text-center max-w-xl mx-auto">
+                AI驱动的热点事件时间轴 · 洞察历史脉络
+              </p>
             </div>
           )}
+
+          <div className="p-4 w-full">
+            <div className="glass-card rounded-full overflow-hidden flex items-center p-1 pr-2">
+              <Input
+                type="text"
+                placeholder="输入关键词，如：俄乌冲突、中美贸易..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="flex-1 border-0 bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground/70"
+              />
+
+              <div className="flex items-center">
+                <Select
+                  value={dateFilter.option}
+                  onValueChange={handleDateFilterChange as (value: string) => void}
+                  defaultValue="all"
+                >
+                  <SelectTrigger className="w-auto border-0 bg-transparent mr-2 focus:ring-0">
+                    <div className="flex items-center">
+                      <ChevronDown size={14} className="mr-1 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {dateFilter.option === 'all' && '所有时间'}
+                        {dateFilter.option === 'month' && '近一个月'}
+                        {dateFilter.option === 'halfYear' && '近半年'}
+                        {dateFilter.option === 'year' && '近一年'}
+                        {dateFilter.option === 'custom' && '自定义'}
+                      </span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="glass-card border-0">
+                    <SelectItem value="all">所有时间</SelectItem>
+                    <SelectItem value="month">近一个月</SelectItem>
+                    <SelectItem value="halfYear">近半年</SelectItem>
+                    <SelectItem value="year">近一年</SelectItem>
+                    <SelectItem value="custom">自定义</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isLoading}
+                  className="rounded-full aspect-square h-9 w-9 bg-primary hover:bg-primary/90"
+                >
+                  {isLoading ?
+                    <div className="loading-spinner" /> :
+                    <Search size={16} />
+                  }
+                </Button>
+              </div>
+            </div>
+
+            {/* 自定义日期范围输入 */}
+            {dateFilter.option === 'custom' && (
+              <div className="flex flex-col sm:flex-row gap-2 mt-3 glass p-3 rounded-xl">
+                <div className="flex-1 flex gap-2 items-center">
+                  <label htmlFor="start-date" className="text-sm whitespace-nowrap">开始日期:</label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={handleStartDateChange}
+                    className="flex-1 glass-input text-sm h-8"
+                  />
+                </div>
+                <div className="flex-1 flex gap-2 items-center">
+                  <label htmlFor="end-date" className="text-sm whitespace-nowrap">结束日期:</label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={endDate}
+                    onChange={handleEndDateChange}
+                    className="flex-1 glass-input text-sm h-8"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </form>
+
+        {/* 搜索进度显示 */}
+        <div className={`w-full max-w-3xl mx-auto px-4 mb-4 transition-opacity duration-300 ${searchProgressVisible ? 'opacity-100' : 'opacity-0'}`}>
+          <SearchProgress
+            steps={searchProgressSteps}
+            visible={searchProgressVisible}
+            isActive={searchProgressActive}
+          />
         </div>
-      </form>
 
-      {/* 搜索进度显示 - 独立于表单，放在搜索表单下方 */}
-      <div className={`w-full max-w-3xl mx-auto px-4 transition-opacity duration-300 ${searchProgressVisible ? 'opacity-100' : 'opacity-0'}`}
-           style={{marginTop: searchPosition === 'center' ? "calc(50vh + 180px)" : "80px", zIndex: 15}}>
-        <SearchProgress
-          steps={searchProgressSteps}
-          visible={searchProgressVisible}
-          isActive={searchProgressActive}
-        />
-      </div>
-
-      {/* 时间轴容器 */}
-      <div className="flex-1 pt-24 pb-12 px-4 md:px-8 w-full max-w-6xl mx-auto">
+        {/* 时间轴容器 */}
         {(timelineVisible || isLoading) && (
           <div
             ref={timelineRef}
-            className={`timeline-container ${timelineVisible ? 'timeline-container-visible' : ''}`}
+            className={`timeline-container ${timelineVisible ? 'timeline-container-visible' : ''} mt-4`}
           >
             {error && (
               <div className="mb-6 sm:mb-8 p-3 sm:p-4 glass text-red-500 dark:text-red-300 rounded-lg text-sm sm:text-base">

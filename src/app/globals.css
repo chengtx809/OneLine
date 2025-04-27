@@ -160,18 +160,18 @@
 
 /* 输入框动画 */
 .search-container-center {
-  @apply fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl z-10
+  @apply w-full max-w-3xl mx-auto z-10 mt-[45vh] mb-8
          transition-all duration-700 ease-in-out;
 }
 
 .search-container-top {
-  @apply fixed top-4 left-1/2 transform -translate-x-1/2 w-full max-w-3xl z-10
+  @apply w-full max-w-3xl mx-auto z-10 mt-16
          transition-all duration-700 ease-in-out;
 }
 
 /* timeline-container相关的样式部分 */
 .timeline-container {
-  @apply mt-24 opacity-0 transition-opacity duration-700 w-full;
+  @apply opacity-0 transition-opacity duration-700 w-full;
 }
 
 .timeline-container-visible {
