@@ -13,9 +13,22 @@ on:
 jobs:
   prepare-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Git credentials
+        run: |
+          git config --global user.email "chengtx007@126.com"
+          git config --global user.name "chengtx809"
+          git config --global credential.helper store
+          echo "https://${{ secrets.GITHUB_TOKEN }}:x-oauth-basic@github.com" > ~/.git-credentials
 
       - name: Create release branch
         run: |
@@ -29,8 +42,6 @@ jobs:
 
       - name: Commit changes
         run: |
-          git config --local user.email "chengtx007@126.com"
-          git config --local user.name "chengtx809"
           git add package.json
           git commit -m "chore: 发布 v${{ github.event.inputs.version }}"
 

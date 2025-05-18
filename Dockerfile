@@ -4,20 +4,21 @@ FROM node:20-alpine AS base
 # 安装依赖
 FROM base AS dependencies
 WORKDIR /app
-COPY package.json bun.lock ./
-RUN apk add --no-cache curl
+COPY package.json ./
+# 使用官方安装脚本安装 Bun
+RUN apk add --no-cache curl unzip
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
+# 安装依赖
+COPY . .
 RUN bun install
+# 显式安装 Biome 以确保 lint 能够运行
+RUN bun add -d @biomejs/biome
 
 # 构建应用
-FROM base AS builder
+FROM dependencies AS builder
 WORKDIR /app
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY . .
-RUN apk add --no-cache curl
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
+# 构建应用
 RUN bun run build
 
 # 生产环境

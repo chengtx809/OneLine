@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Install Biome
+        run: bun add -d @biomejs/biome
+
       - name: Lint
         run: bun run lint
 

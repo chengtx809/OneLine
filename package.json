@@ -6,8 +6,8 @@
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
-    "lint": "bunx biome lint --write && bunx tsc --noEmit",
-    "format": "bunx biome format --write"
+    "lint": "biome lint --write && tsc --noEmit",
+    "format": "biome format --write"
   },
   "dependencies": {
     "@netlify/plugin-nextjs": "^4.41.3",
