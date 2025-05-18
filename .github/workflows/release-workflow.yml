@@ -1,0 +1,55 @@
+name: Release Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '发布版本 (例如: 1.0.0)'
+        required: true
+      release_notes:
+        description: '发布说明'
+        required: true
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create release branch
+        run: |
+          git checkout -b release/v${{ github.event.inputs.version }}
+
+      - name: Update version in package.json
+        run: |
+          # 使用jq更新package.json中的版本号
+          jq '.version = "${{ github.event.inputs.version }}"' package.json > package.json.tmp
+          mv package.json.tmp package.json
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "chengtx007@126.com"
+          git config --local user.name "chengtx809"
+          git add package.json
+          git commit -m "chore: 发布 v${{ github.event.inputs.version }}"
+
+      - name: Push release branch
+        run: |
+          git push origin release/v${{ github.event.inputs.version }}
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: 发布 v${{ github.event.inputs.version }}"
+          branch: release/v${{ github.event.inputs.version }}
+          title: "🚀 发布 v${{ github.event.inputs.version }}"
+          body: |
+            ## 版本 v${{ github.event.inputs.version }}
+
+            ${{ github.event.inputs.release_notes }}
+
+            此PR由GitHub Actions自动创建。合并到主分支后，将会自动触发Docker镜像构建和发布。
+          labels: release
+          base: main

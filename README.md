@@ -37,13 +37,21 @@ fork仓库后填入环境变量部署即可
 直接使用预构建的Docker镜像：
 
 ```bash
+# 使用justincnn维护的镜像
 docker pull justincnn/oneline
+
+# 或使用官方镜像（支持arm和amd架构）
+docker pull chengtx809/oneline
 ```
 
 然后运行容器：
 
 ```bash
+# 使用justincnn维护的镜像
 docker run -p 3000:3000 justincnn/oneline
+
+# 或使用官方镜像
+docker run -p 3000:3000 chengtx809/oneline
 ```
 
 访问 `http://localhost:3000` 即可使用。
@@ -170,7 +178,8 @@ OneLine可以轻松部署到Vercel平台：
 
 * 在线演示：[https://oneline.chengtx.me](https://oneline.chengtx.me)
 * 项目仓库：[https://github.com/chengtx809/OneLine](https://github.com/chengtx809/OneLine)
-* Docker镜像：[justincnn/oneline](https://hub.docker.com/r/justincnn/oneline)
+* Docker镜像：[chengtx809/oneline](https://hub.docker.com/r/chengtx809/oneline)（官方镜像，支持arm和amd架构）
+* Docker镜像：[justincnn/oneline](https://hub.docker.com/r/justincnn/oneline)（社区维护）
 
 ## 🙏 致谢
 
