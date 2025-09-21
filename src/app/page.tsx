@@ -22,9 +22,10 @@ import { SearchProgress, type SearchProgressStep } from '@/components/SearchProg
 import { HotSearchDropdown } from '@/components/HotSearchDropdown';
 import { SearchHistory, type SearchHistoryItem } from '@/components/SearchHistory';
 import { toast } from 'sonner';
-import { Settings, SortDesc, SortAsc, Download, Search, ChevronDown, Flame, FileText } from 'lucide-react';
+import { Settings, SortDesc, SortAsc, Download, Search, ChevronDown, Flame, FileText, Rss } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import RssNewsCard from '@/components/RssNewsCard';
 import { formatMarkdownText } from '@/lib/markdown';
 
 // Markdown rendering utility
@@ -94,6 +95,7 @@ function MainContent() {
   const [impactContent, setImpactContent] = useState<string | null>(null);
   const [parsedImpact, setParsedImpact] = useState<{ summary?: string } | null>(null);
 
+
   // Load search history from localStorage when component mounts
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -110,6 +112,28 @@ function MainContent() {
       }
     }
   }, []);
+
+  // Fetch RSS news on component mount
+  useEffect(() => {
+    const fetchRssNews = async () => {
+      try {
+        const response = await fetch('/api/rss');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch RSS news: ${response.statusText}`);
+        }
+        const data = await response.json();
+        setRssNews(data.items);
+      } catch (error) {
+        console.error('Error fetching RSS news:', error);
+        toast.error('获取RSS新闻失败');
+      } finally {
+        setIsRssLoading(false);
+      }
+    };
+
+    fetchRssNews();
+  }, []);
+
 
   // Function to save a search query to history
   const saveSearchToHistory = (searchQuery: string) => {
@@ -826,6 +850,71 @@ function MainContent() {
     }, 100);
   };
 
+  const handleAnalyzeRssNews = async (item: any) => {
+    if (!isConfigured) {
+      toast.info('请先配置API设置');
+      setShowSettings(true);
+      return;
+    }
+
+    if (isPasswordProtected && !isPasswordValidated) {
+      toast.info('请先验证访问密码');
+      setShowSettings(true);
+      return;
+    }
+
+    setQuery(item.title); // Set the query to the RSS news title for impact assessment
+    setShowImpact(true); // Show the impact assessment section
+    setShowEventSummary(false);
+    setEventSummary(null);
+    setImpactContent(null);
+    setParsedImpact(null);
+    setTimelineVisible(false); // Hide timeline when analyzing RSS news
+
+    setSearchProgressSteps([]);
+    setSearchProgressActive(true);
+    setSearchProgressVisible(true);
+
+    setSearchStartTime(Date.now());
+    setSearchTimeElapsed(null);
+
+    try {
+      let impactText = '';
+      await fetchImpactAssessment(
+        item.title, // Use the RSS news title as the query for impact assessment
+        apiConfig,
+        progressCallback,
+        (chunk, isDone) => {
+          impactText += chunk;
+          setImpactContent(impactText);
+        }
+      );
+
+      if (searchStartTime) {
+        setSearchTimeElapsed(Date.now() - searchStartTime);
+      }
+
+      setTimeout(() => {
+        setSearchProgressActive(false);
+      }, 1000);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : '获取影响评估失败';
+      toast.error(errorMessage);
+      console.error('Error fetching impact assessment for RSS news:', err);
+
+      setSearchProgressActive(false);
+
+      if (searchStartTime) {
+        setSearchTimeElapsed(Date.now() - searchStartTime);
+      }
+    } finally {
+      setIsLoading(false); // Ensure loading state is reset
+    }
+  };
+
+
+
   return (
     <main className="flex min-h-screen flex-col relative">
       <div className="bg-gradient-purple" />
@@ -965,9 +1054,58 @@ function MainContent() {
               onSelectHotItem={handleHotItemClick}
               hasSearchResults={timelineData.events.length > 0}
             />
+            {/* RSS News Section */}
+            {searchPosition === 'center' && !isLoading && rssNews.length > 0 && (
+              <div className="mt-8 mb-8 animate-fade-in">
+                <h2 className="text-2xl font-bold mb-4 text-center flex items-center justify-center gap-2">
+                  <Rss size={24} className="text-orange-500" /> 实时热点
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {rssNews.map((item, index) => (
+                    <RssNewsCard key={index} item={item} onAnalyze={handleAnalyzeRssNews} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {searchPosition === 'center' && isRssLoading && (
+              <div className="mt-8 mb-8 animate-fade-in">
+                <h2 className="text-2xl font-bold mb-4 text-center flex items-center justify-center gap-2">
+                  <Rss size={24} className="text-orange-500" /> 实时热点
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(3)].map((_, index) => (
+                    <Card key={index} className="relative overflow-hidden rounded-lg shadow-md">
+                      <CardHeader>
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <Skeleton className="h-4 w-1/2 mb-2" />
+                        <Skeleton className="h-12 w-full" />
+                        <div className="absolute bottom-3 right-3">
+                          <Skeleton className="h-8 w-24 rounded-full" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </form>
+
+      {/* AI Analysis for RSS News */}
+      {showImpact && !timelineVisible && query.trim() && (
+        <div className="w-full mx-auto px-4 max-w-3xl pt-4">
+          <ImpactAssessment
+            query={query} // This query will be the RSS news item's title
+            isLoading={isLoading}
+            onRequestImpact={handleRequestImpact}
+            onSummaryExtracted={handleSummaryExtracted}
+          />
+        </div>
+      )}
 
       <div className="w-full mx-auto px-4 max-w-3xl pt-24">
         <SearchProgress
@@ -1005,8 +1143,8 @@ function MainContent() {
           </div>
         )}
 
-        {/* 影响分析板块 */}
-        {(showImpact || timelineVisible) && (
+        {/* 影响分析板块 (Original, now only for search results) */}
+        {(showImpact && timelineVisible && query.trim()) && (
           <div className="mt-4 sm:mt-0 mb-0">
             <ImpactAssessment
               query={query}
