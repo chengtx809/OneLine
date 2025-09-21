@@ -19,7 +19,6 @@ import {
 import type { TimelineData, TimelineEvent, DateFilterOption, DateFilterConfig } from '@/types';
 import { fetchTimelineData, fetchEventDetails, fetchImpactAssessment, type ProgressCallback, type StreamCallback } from '@/lib/api';
 import { SearchProgress, type SearchProgressStep } from '@/components/SearchProgress';
-import { BaiduHotList } from '@/components/BaiduHotList';
 import { HotSearchDropdown } from '@/components/HotSearchDropdown';
 import { SearchHistory, type SearchHistoryItem } from '@/components/SearchHistory';
 import { toast } from 'sonner';
@@ -72,7 +71,6 @@ function MainContent() {
   const [searchProgressSteps, setSearchProgressSteps] = useState<SearchProgressStep[]>([]);
   const [searchProgressActive, setSearchProgressActive] = useState(false);
 
-  const [showHotList, setShowHotList] = useState(false);
   const [showHotSearch, setShowHotSearch] = useState(true);
   const [flyingHotItem, setFlyingHotItem] = useState<{ title: string, startX: number, startY: number } | null>(null);
 
@@ -199,7 +197,6 @@ function MainContent() {
   const handleHotItemClick = (title: string) => {
     if (title.trim() === query.trim() && timelineData.events.length > 0 && timelineVisible) {
       console.log("跳过相同热搜项点击:", title);
-      setShowHotList(false);
       setShowHotSearch(false);
       setShowSearchHistory(false);
       return;
@@ -226,7 +223,6 @@ function MainContent() {
 
     setTimeout(() => {
       setQuery(title);
-      setShowHotList(false);
       setFlyingHotItem(null);
       setShowHotSearch(false);
       setShowSearchHistory(false);
@@ -435,7 +431,6 @@ function MainContent() {
     // Save search query to history
     saveSearchToHistory(query);
 
-    setShowHotList(false);
     setShowHotSearch(false);
     setShowSearchHistory(false);
 
@@ -803,9 +798,6 @@ function MainContent() {
     });
   };
 
-  const toggleHotList = () => {
-    setShowHotList(prev => !prev);
-  };
 
   // Handle a click on a history item
   const handleHistoryItemClick = (queryText: string) => {
@@ -987,11 +979,6 @@ function MainContent() {
         />
       </div>
 
-      <BaiduHotList
-        visible={showHotList}
-        onClose={() => setShowHotList(false)}
-        onSelectHotItem={handleHotItemClick}
-      />
 
       {flyingHotItem && (
         <div
